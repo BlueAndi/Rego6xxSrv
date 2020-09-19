@@ -194,14 +194,14 @@ static TemperatureId            gReqTemp                    = TEMPERATURE_ID_MAX
 /** Pending Rego6xx response, used to read temperatures. */
 static const Rego6xxStdRsp*     gRegoRsp                    = nullptr;
 
-/** Contains the new GT3 target value, which to set. */
-static Temperature              gGt3TargetValue;
+/** Contains the temperature, which shall be written. */
+static Temperature              gTemperatureToWrite;
 
-/** Signals to set a new GT3 target value. */
-static bool                     gSetNewTargetValue          = false;
+/** Signals to set a new temperature value. */
+static bool                     gWriteTemperature           = false;
 
-/** Pending Rego6xx response, used to write GT3 target value. */
-static const Rego6xxStdRsp*     gRegoRspGt3TargetValue      = nullptr;
+/** Pending Rego6xx response, used to write temperature value. */
+static const Rego6xxStdRsp*     gRegoWriteTemperatureRsp    = nullptr;
 
 /******************************************************************************
  * External functions
@@ -273,33 +273,55 @@ void loop()
 {
     handleNetwork();
 
-    /* New GT3 target value requested and no other Rego6xx command is pending? 
+    /* Shall a temperature value be written?
+     * Precondition is that no other Rego6xx command is pending.
      * Note, this may pause an ongoing temperature read cycle for a moment.
      */
-    if ((true == gSetNewTargetValue) &&
+    if ((true == gWriteTemperature) &&
         (nullptr == gRegoRsp))
     {
-        if (nullptr == gRegoRspGt3TargetValue)
+        /* Nothing already pending? */
+        if (nullptr == gRegoWriteTemperatureRsp)
         {
+            /* No pause necessary? */
             if ((false == gRego6xxReqPauseTimer.isTimerRunning()) ||
                 (true == gRego6xxReqPauseTimer.isTimeout()))
             {
-                gRegoRspGt3TargetValue = gRego6xxCtrl.writeSysReg(Rego6xxCtrl::SYSREG_ADDR_GT3_TARGET, gGt3TargetValue.getRawTemperature());
+                if (0 != gTemperatureToWrite.getName().equals("gt3Target"))
+                {
+                    gRegoWriteTemperatureRsp = gRego6xxCtrl.writeSysReg(Rego6xxCtrl::SYSREG_ADDR_GT3_TARGET, gTemperatureToWrite.getRawTemperature());
+                }
+                else if (0 != gTemperatureToWrite.getName().equals("gt3On"))
+                {
+                    gRegoWriteTemperatureRsp = gRego6xxCtrl.writeSysReg(Rego6xxCtrl::SYSREG_ADDR_GT3_ON, gTemperatureToWrite.getRawTemperature());
+                }
+                else if (0 != gTemperatureToWrite.getName().equals("gt3Off"))
+                {
+                    gRegoWriteTemperatureRsp = gRego6xxCtrl.writeSysReg(Rego6xxCtrl::SYSREG_ADDR_GT3_OFF, gTemperatureToWrite.getRawTemperature());
+                }                
+                else
+                /* Should never happen. */
+                {
+                    gWriteTemperature = false;
+                }
             }
         }
-        else if ((true == gRegoRspGt3TargetValue->isUsed()) &&
-                 (false == gRegoRspGt3TargetValue->isPending()))
+        /* Response received? */
+        else if ((true == gRegoWriteTemperatureRsp->isUsed()) &&
+                 (false == gRegoWriteTemperatureRsp->isPending()))
         {
-            gRego6xxCtrl.release(*gRegoRspGt3TargetValue);
+            gRego6xxCtrl.release(*gRegoWriteTemperatureRsp);
 
-            gSetNewTargetValue      = false;
-            gRegoRspGt3TargetValue  = nullptr;
+            gWriteTemperature           = false;
+            gRegoWriteTemperatureRsp    = nullptr;
 
             /* Pause sending requests, after response. */
             gRego6xxReqPauseTimer.start(REGO6xx_REQ_PAUSE);
         }
         else
+        /* Waiting for response */
         {
+            /* Nothing to do. */
             ;
         }
     }
@@ -307,22 +329,27 @@ void loop()
     else if ((true == gSensorReadCycleTimer.isTimerRunning()) &&
              (true == gSensorReadCycleTimer.isTimeout()))
     {
+        /* Nothing already pending? */
         if (nullptr == gRegoRsp)
         {
+            /* No pause necessary? */
             if ((false == gRego6xxReqPauseTimer.isTimerRunning()) ||
                 (true == gRego6xxReqPauseTimer.isTimeout()))
             {
                 gRegoRsp = readNextTemperatures(gReqTemp, gReqTemp);
 
+                /* If all temperatures are read, continoue in the next interval. */
                 if (nullptr == gRegoRsp)
                 {
                     gSensorReadCycleTimer.start(SENSOR_READ_PERIOD);
                 }
             }
         }
+        /* Response received? */
         else if ((true == gRegoRsp->isUsed()) &&
                  (false == gRegoRsp->isPending()))
         {
+            /* The temperature is taken over only if the response is valid. */
             if (true == gRegoRsp->isValid())
             {
                 gTemperatures[gReqTemp].setRawTemperature(gRegoRsp->getValue());
@@ -335,12 +362,14 @@ void loop()
             gRego6xxReqPauseTimer.start(REGO6xx_REQ_PAUSE);
         }
         else
+        /* Wait for pending response. */
         {
-            /* Wait for pending response. */
+            /* Nothing to do */
             ;
         }
     }
 
+    /* Process the heatpump Rego6xx controller */
     gRego6xxCtrl.process();
 
     return;
@@ -566,9 +595,9 @@ static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpR
     DynamicJsonDocument                 jsonDoc(256);
     DynamicJsonDocument                 jsonDocRsp(128);
 
-    /* If setting a new gt3 target value is still pending, a new can not be set. */
-    if ((nullptr != gRegoRspGt3TargetValue) &&
-        (true == gRegoRspGt3TargetValue->isUsed()))
+    /* If any temperature write is pending, a new can not be set. */
+    if ((nullptr != gRegoWriteTemperatureRsp) &&
+        (true == gRegoWriteTemperatureRsp->isUsed()))
     {
         jsonDocRsp["status"] = STATUS_ID_EPENDING;
     }
@@ -580,20 +609,31 @@ static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpR
     else
     {
         JsonObject  jsonObj = jsonDoc.as<JsonObject>();
-        float       value   = 0.0f;
 
-        if (false == jsonObj["gt3Target"].isNull())
+        if ((true == jsonObj["name"].isNull()) ||
+            (true == jsonObj["value"].isNull()))
         {
-            value = jsonObj["gt3Target"].as<float>();
-
-            gGt3TargetValue.setTemperature(value);
-            gSetNewTargetValue = true;
-
-            jsonDocRsp["status"] = STATUS_ID_OK;
+            jsonDocRsp["status"] = STATUS_ID_EPAR;
         }
         else
         {
-            jsonDocRsp["status"] = STATUS_ID_EPAR;
+            String  name    = jsonObj["name"];
+            float   value   = jsonObj["value"].as<float>();
+            
+            if ((0 != name.equals("gt3Target")) ||
+                (0 != name.equals("gt3On")) ||
+                (0 != name.equals("gt3Off")))
+            {
+                gTemperatureToWrite.setName(name);
+                gTemperatureToWrite.setTemperature(value);
+                gWriteTemperature = true;
+
+                jsonDocRsp["status"] = STATUS_ID_OK;
+            }
+            else
+            {
+                jsonDocRsp["status"] = STATUS_ID_EPAR;
+            }
         }
     }
 
@@ -621,7 +661,7 @@ static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRe
 
     /* Any command pending? */
     if ((nullptr != gRegoRsp) ||
-        (nullptr != gRegoRspGt3TargetValue))
+        (nullptr != gRegoWriteTemperatureRsp))
     {
         jsonDocRsp["status"] = STATUS_ID_EPENDING;
     }

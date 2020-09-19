@@ -109,12 +109,16 @@ Status 0 means successful. If the request fails, it the status will be non-zero 
 ## Set temperature value (POST /api/sensors)
 Set the temperature target value in °C.
 
-Supported:
-* gt3TargetValue
+JSON parameter:
+* name: Temperature name as string.
+  * gt3Target
+  * gt3On
+  * gt3Off
+* value: Temperature value in °C as float.
 
 Example:
 ```
-$ curl -H "Content-Type: application/json" --data '{"gt3Target": 5.2}' http://192.168.1.3/api/sensors
+$ curl -H "Content-Type: application/json" --data '{"name": "gt3Target", "value": 20.4}' http://192.168.1.3/api/sensors
 ```
 
 Response:
@@ -126,6 +130,11 @@ Status 0 means successful. If the request fails, it the status will be non-zero 
 
 ## Send raw command (POST /api/debug)
 Send a raw command to the heatpump controller for reverse engineering or debug purposes. Note, the response message comes back as string with hex numbers.
+
+JSON parameter:
+* cmdId: Rego6xx command id as integer.
+* addr: Rego6xx register address.
+* value: Rego6xx Register value.
 
 Example:
 ```
