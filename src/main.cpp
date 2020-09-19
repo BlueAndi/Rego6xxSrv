@@ -119,8 +119,17 @@ static const Rego6xxStdRsp* readNextTemperatures(const TemperatureId& lastTemper
  * Variables
  *****************************************************************************/
 
+#if defined(DEBUG)
+
 /** Serial interface baudrate. */
 static const uint32_t           SERIAL_BAUDRATE             = 115200U;
+
+#else
+
+/** Serial interface baudrate. */
+static const uint32_t           SERIAL_BAUDRATE             = 19200U;
+
+#endif  /* defined(DEBUG) */
 
 /** Ethernet interface MAC address */
 static const byte               DEVICE_MAC_ADDR[]           = { 0x00, 0x22, 0xf9, 0x01, 0x0B, 0x82 };
