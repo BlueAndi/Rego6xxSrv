@@ -43,6 +43,7 @@
  *****************************************************************************/
 #include <Arduino.h>
 #include "Rego6xxRsp.h"
+#include "SimpleTimer.hpp"
 
 /******************************************************************************
  * Macros
@@ -70,7 +71,8 @@ public:
     Rego6xxStdRsp(Stream& stream) :
         Rego6xxRsp(),
         m_stream(stream),
-        m_response()
+        m_response(),
+        m_timer()
     {
     }
 
@@ -107,8 +109,12 @@ private:
     /** Response size in bytes */
     static const uint8_t    RSP_SIZE    = 5;
 
+    /** Timeout in ms */
+    static const uint32_t   TIMEOUT     = (30UL * 1000UL);
+
     Stream&     m_stream;               /**< Input stream from heatpump controller. */
     uint8_t     m_response[RSP_SIZE];   /**< Response message */
+    SimpleTimer m_timer;                /**< Used for response timeout observation. */
 
     Rego6xxStdRsp();
 

@@ -91,15 +91,7 @@ uint16_t Rego6xxConfirmRsp::getValue() const
     if ((false == isPending()) &&
         (true == isValid()))
     {
-        /* Common rules:
-            - MSB first
-            - 7 bit communication is used,
-                e.g. register address 0x1234 in binary form 00010010 001101000
-                will be expanded to 7bit form 00 0100100 01101000
-        */
-        data  = ((uint16_t)(m_response[1] & 0x03)) << 14;
-        data |= ((uint16_t)(m_response[2] & 0x7f)) <<  7;
-        data |= ((uint16_t)(m_response[3] & 0x7f)) <<  0;
+        /* TODO */
     }
 
     return data;
@@ -115,18 +107,42 @@ uint16_t Rego6xxConfirmRsp::getValue() const
 
 void Rego6xxConfirmRsp::receive()
 {
-    if ((true == m_isPending) &&
-        (RSP_SIZE <= m_stream.available()))
+    /* Response pending? */
+    if (true == m_isPending)
     {
-        uint8_t idx = 0;
-
-        while(RSP_SIZE > idx)
+        /* Start response timeout observation as soon as possible. */
+        if (false == m_timer.isTimerRunning())
         {
-            m_response[idx] = m_stream.read();
-            ++idx;
+            m_timer.start(TIMEOUT);
         }
+        /* Timeout? */
+        else if (true == m_timer.isTimeout())
+        {
+            m_stream.flush();
+            m_isPending = false;
+            memset(m_response, 0, sizeof(m_response));
+            m_timer.stop();
+        }
+        /* Response complete received? */
+        else if (RSP_SIZE <= m_stream.available())
+        {
+            uint8_t idx = 0;
 
-        m_isPending = false;
+            while(RSP_SIZE > idx)
+            {
+                m_response[idx] = m_stream.read();
+                ++idx;
+            }
+
+            m_isPending = false;
+            m_timer.stop();
+        }
+        /* Waiting for response. */
+        else
+        {
+            /* Nothing to do. */
+            ;
+        }
     }
 }
 

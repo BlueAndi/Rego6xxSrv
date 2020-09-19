@@ -115,18 +115,42 @@ uint16_t Rego6xxStdRsp::getValue() const
 
 void Rego6xxStdRsp::receive()
 {
-    if ((true == m_isPending) &&
-        (RSP_SIZE <= m_stream.available()))
+    /* Response pending? */
+    if (true == m_isPending)
     {
-        uint8_t idx = 0;
-
-        while(RSP_SIZE > idx)
+        /* Start response timeout observation as soon as possible. */
+        if (false == m_timer.isTimerRunning())
         {
-            m_response[idx] = m_stream.read();
-            ++idx;
+            m_timer.start(TIMEOUT);
         }
+        /* Timeout? */
+        else if (true == m_timer.isTimeout())
+        {
+            m_stream.flush();
+            m_isPending = false;
+            memset(m_response, 0, sizeof(m_response));
+            m_timer.stop();
+        }
+        /* Response complete received? */
+        else if (RSP_SIZE <= m_stream.available())
+        {
+            uint8_t idx = 0;
 
-        m_isPending = false;
+            while(RSP_SIZE > idx)
+            {
+                m_response[idx] = m_stream.read();
+                ++idx;
+            }
+
+            m_isPending = false;
+            m_timer.stop();
+        }
+        /* Waiting for response. */
+        else
+        {
+            /* Nothing to do. */
+            ;
+        }
     }
 }
 
