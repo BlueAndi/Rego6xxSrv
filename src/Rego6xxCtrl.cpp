@@ -89,6 +89,21 @@ const Rego6xxConfirmRsp* Rego6xxCtrl::writeSysReg(Rego6xxCtrl::SysRegAddr sysReg
     return rsp;
 }
 
+const Rego6xxStdRsp* Rego6xxCtrl::readRegoVersion()
+{
+    const Rego6xxStdRsp*    rsp = nullptr;
+
+    if (nullptr == m_pendingRsp)
+    {
+        writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_READ_REGO_VERSION, 0, 0);
+        m_stdRsp.acquire();
+        m_pendingRsp    = &m_stdRsp;
+        rsp             = &m_stdRsp;
+    }
+
+    return rsp;
+}
+
 String Rego6xxCtrl::writeDbg(uint8_t cmdId, uint16_t addr, uint16_t data)
 {
     uint8_t             cmdBuffer[CMD_SIZE];

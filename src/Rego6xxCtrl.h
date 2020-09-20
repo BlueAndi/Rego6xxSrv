@@ -177,6 +177,15 @@ public:
     const Rego6xxConfirmRsp* writeSysReg(SysRegAddr sysRegAddr, uint16_t value);
 
     /**
+     * Read version of Rego6xxx controller.
+     * 
+     * Note, the answer for a Rego600 controller is 0x0258.
+     * 
+     * @return Asynchronous response
+     */
+    const Rego6xxStdRsp* readRegoVersion();
+
+    /**
      * Write a value to the given address.
      * Only used for debugging purposes and reverse engineering of the Rego6xx controller
      * communication.

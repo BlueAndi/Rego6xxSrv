@@ -214,7 +214,9 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_REGO_VERSION:
-            generateStdRsp(0); /* Not supported yet. */
+            Serial.printf("Read Rego6xxx version.\n");
+
+            generateStdRsp(0x0258); /* 0x0258 for Rego600 */
             break;
             
         default:
