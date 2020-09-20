@@ -53,9 +53,6 @@
  * Types and Classes
  *****************************************************************************/
 
-/* Forward declaration. */
-class Rego6xxCtrl;
-
 /**
  * A response of the Rego6xx heatpump controller, containing a uint16_t value.
  */
@@ -118,12 +115,12 @@ private:
 
     Rego6xxStdRsp();
 
-    friend Rego6xxCtrl;
-
     /**
      * Receive response. This is called by the controller.
      */
     void receive() override;
+
+    friend Rego6xxCtrl;
 };
 
 /******************************************************************************

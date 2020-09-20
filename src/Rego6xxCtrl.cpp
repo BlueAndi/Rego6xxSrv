@@ -61,12 +61,32 @@
 
 const Rego6xxStdRsp* Rego6xxCtrl::readSysReg(Rego6xxCtrl::SysRegAddr sysRegAddr)
 {
-    return writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_READ_SYSTEM_REG, sysRegAddr, 0);
+    const Rego6xxStdRsp*    rsp = nullptr;
+
+    if (nullptr == m_pendingRsp)
+    {
+        writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_READ_SYSTEM_REG, sysRegAddr, 0);
+        m_stdRsp.acquire();
+        m_pendingRsp    = &m_stdRsp;
+        rsp             = &m_stdRsp;
+    }
+
+    return rsp;
 }
 
-const Rego6xxStdRsp* Rego6xxCtrl::writeSysReg(Rego6xxCtrl::SysRegAddr sysRegAddr, uint16_t data)
+const Rego6xxConfirmRsp* Rego6xxCtrl::writeSysReg(Rego6xxCtrl::SysRegAddr sysRegAddr, uint16_t data)
 {
-    return writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_WRITE_SYSTEM_REG, sysRegAddr, data);
+    const Rego6xxConfirmRsp*    rsp = nullptr;
+
+    if (nullptr == m_pendingRsp)
+    {
+        writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_WRITE_SYSTEM_REG, sysRegAddr, data);
+        m_confirmRsp.acquire();
+        m_pendingRsp    = &m_confirmRsp;
+        rsp             = &m_confirmRsp;
+    }
+
+    return rsp;
 }
 
 String Rego6xxCtrl::writeDbg(uint8_t cmdId, uint16_t addr, uint16_t data)
@@ -131,14 +151,9 @@ String Rego6xxCtrl::writeDbg(uint8_t cmdId, uint16_t addr, uint16_t data)
  * Private Methods
  *****************************************************************************/
 
-const Rego6xxStdRsp* Rego6xxCtrl::writeCmd(uint8_t devAddr, CmdId cmdId, uint16_t regAddr, uint16_t data)
+void Rego6xxCtrl::writeCmd(uint8_t devAddr, CmdId cmdId, uint16_t regAddr, uint16_t data)
 {
     uint8_t cmdBuffer[CMD_SIZE];
-
-    if (true == m_stdRsp.isUsed())
-    {
-        return nullptr;
-    }
 
     /*
         *----------------*------------*------------------*------*----------*
@@ -166,9 +181,7 @@ const Rego6xxStdRsp* Rego6xxCtrl::writeCmd(uint8_t devAddr, CmdId cmdId, uint16_
 
     (void)m_stream.write(cmdBuffer, CMD_SIZE);
 
-    m_stdRsp.acquire();
-
-    return &m_stdRsp;
+    return;
 }
 
 /******************************************************************************

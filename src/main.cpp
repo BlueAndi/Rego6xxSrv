@@ -210,7 +210,7 @@ static Temperature              gTemperatureToWrite;
 static bool                     gWriteTemperature           = false;
 
 /** Pending Rego6xx response, used to write temperature value. */
-static const Rego6xxStdRsp*     gRegoWriteTemperatureRsp    = nullptr;
+static const Rego6xxConfirmRsp* gRegoWriteTemperatureRsp    = nullptr;
 
 /******************************************************************************
  * External functions
@@ -319,7 +319,7 @@ void loop()
         else if ((true == gRegoWriteTemperatureRsp->isUsed()) &&
                  (false == gRegoWriteTemperatureRsp->isPending()))
         {
-            gRego6xxCtrl.release(*gRegoWriteTemperatureRsp);
+            gRego6xxCtrl.release();
 
             gWriteTemperature           = false;
             gRegoWriteTemperatureRsp    = nullptr;
@@ -364,7 +364,7 @@ void loop()
                 gTemperatures[gReqTemp].setRawTemperature(gRegoRsp->getValue());
             }
 
-            gRego6xxCtrl.release(*gRegoRsp);
+            gRego6xxCtrl.release();
             gRegoRsp = nullptr;
 
             /* Pause sending requests, after response. */

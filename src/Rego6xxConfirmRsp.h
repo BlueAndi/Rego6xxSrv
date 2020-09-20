@@ -98,11 +98,11 @@ public:
     uint8_t getDevAddr() const override;
 
     /**
-     * Get value.
+     * Is confirmation received?
      * 
-     * @return value
+     * @return If confirmation is received, it will return true otherwise false.
      */
-    uint16_t getValue() const;
+    bool isConfirmed() const;
 
 private:
 
@@ -118,12 +118,12 @@ private:
 
     Rego6xxConfirmRsp();
 
-    friend Rego6xxCtrl;
-
     /**
      * Receive response. This is called by the controller.
      */
     void receive() override;
+
+    friend Rego6xxCtrl;
 };
 
 /******************************************************************************

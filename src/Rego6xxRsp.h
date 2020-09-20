@@ -51,6 +51,9 @@
  * Types and Classes
  *****************************************************************************/
 
+/* Forward declaration. */
+class Rego6xxCtrl;
+
 /**
  * Base response of the heatpump Rego6xx controller.
  */
@@ -137,6 +140,8 @@ protected:
      * Receive response. This is called by the controller.
      */
     virtual void receive() = 0;
+
+    friend Rego6xxCtrl;
 };
 
 /******************************************************************************

@@ -64,10 +64,9 @@ public:
      */
     Rego6xxSim() :
         m_readIndex(0),
-        m_stdRsp()
+        m_rspBuffer(),
+        m_rspSize(0)
     {
-        /* Use of just one single answer for everything. */
-        generateRsp(300);
     }
 
     /**
@@ -84,7 +83,7 @@ public:
      */
     int available() override
     {
-        return STD_RSP_SIZE - m_readIndex;
+        return m_rspSize - m_readIndex;
     }
 
     /**
@@ -126,17 +125,23 @@ public:
 
 private:
 
-    static const uint8_t    STD_RSP_SIZE    = 5;    /**< Rego6xx standard response size in byte */
+    static const uint8_t    RSP_BUFFER_SIZE = 64;    /**< Rego6xx response buffer size in byte. */
 
-    uint8_t m_readIndex;            /**< Read index in the standard response buffer. */
-    uint8_t m_stdRsp[STD_RSP_SIZE]; /**< Standard response buffer */
+    uint8_t m_readIndex;                    /**< Read index in the standard response buffer. */
+    uint8_t m_rspBuffer[RSP_BUFFER_SIZE];   /**< Standard response buffer */
+    size_t  m_rspSize;                      /**< Size of current filled response buffer */
 
     /**
      * Generate a valid standard response with the given value.
      * 
      * @param[in] value Value used for the response
      */
-    void generateRsp(uint16_t value);
+    void generateStdRsp(uint16_t value);
+
+    /**
+     * Generate a valid confirmation response.
+     */
+    void generateConfirmRsp();
 
     /**
      * Prepare response by checking the received command.

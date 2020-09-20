@@ -43,6 +43,7 @@
  *****************************************************************************/
 #include <Arduino.h>
 #include "Rego6xxStdRsp.h"
+#include "Rego6xxConfirmRsp.h"
 
 /******************************************************************************
  * Macros
@@ -143,7 +144,9 @@ public:
      */
     Rego6xxCtrl(Stream& stream) :
         m_stream(stream),
-        m_stdRsp(stream)
+        m_pendingRsp(nullptr),
+        m_stdRsp(stream),
+        m_confirmRsp(stream)
     {
     }
 
@@ -171,7 +174,7 @@ public:
      * 
      * @return Asynchronous response
      */
-    const Rego6xxStdRsp* writeSysReg(SysRegAddr sysRegAddr, uint16_t value);
+    const Rego6xxConfirmRsp* writeSysReg(SysRegAddr sysRegAddr, uint16_t value);
 
     /**
      * Write a value to the given address.
@@ -192,17 +195,22 @@ public:
      */
     void process()
     {
-        m_stdRsp.receive();
+        if (nullptr != m_pendingRsp)
+        {
+            m_pendingRsp->receive();
+        }
     }
 
     /**
-     * Release a standard response.
-     * 
-     * @param[in] stdRsp    Standard response
+     * Release response.
      */
-    void release(const Rego6xxStdRsp& stdRsp)
+    void release()
     {
-        m_stdRsp.release();
+        if (nullptr != m_pendingRsp)
+        {
+            m_pendingRsp->release();
+            m_pendingRsp = nullptr;
+        }
     }
 
     /** Device address of heat pump controller */
@@ -216,8 +224,10 @@ public:
 
 private:
 
-    Stream&         m_stream;   /**< Input/Output stream to heatpump controller. */
-    Rego6xxStdRsp   m_stdRsp;   /**< Standard response */
+    Stream&             m_stream;       /**< Input/Output stream to heatpump controller. */
+    Rego6xxRsp*         m_pendingRsp;   /**< Current pending response */
+    Rego6xxStdRsp       m_stdRsp;       /**< Standard response */
+    Rego6xxConfirmRsp   m_confirmRsp;   /**< Confirmation response */
 
     Rego6xxCtrl();
 
@@ -227,10 +237,8 @@ private:
      * @param[in] devAddr   Device address (heatpump)
      * @param[in] cmdId     Command id
      * @param[in] data      Command data
-     * 
-     * @return Standard response
      */
-    const Rego6xxStdRsp* writeCmd(uint8_t devAddr, CmdId cmdId, uint16_t regAddr, uint16_t data);
+    void writeCmd(uint8_t devAddr, CmdId cmdId, uint16_t regAddr, uint16_t data);
 
 };
 

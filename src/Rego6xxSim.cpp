@@ -64,11 +64,11 @@ int Rego6xxSim::read()
 {
     int result = -1;
 
-    if (STD_RSP_SIZE > m_readIndex)
+    if (m_rspSize > m_readIndex)
     {
-        Serial.printf("Rx: %02X\n", m_stdRsp[m_readIndex]);
+        Serial.printf("Rx: %02X\n", m_rspBuffer[m_readIndex]);
 
-        result = m_stdRsp[m_readIndex];
+        result = m_rspBuffer[m_readIndex];
         ++m_readIndex;
     }
 
@@ -79,9 +79,9 @@ int Rego6xxSim::peek()
 {
     int result = -1;
 
-    if (STD_RSP_SIZE > m_readIndex)
+    if (m_rspSize > m_readIndex)
     {
-        result = m_stdRsp[m_readIndex];
+        result = m_rspBuffer[m_readIndex];
     }
 
     return result;
@@ -116,31 +116,40 @@ size_t Rego6xxSim::write(const uint8_t* buffer, size_t size)
  * Private Methods
  *****************************************************************************/
 
-void Rego6xxSim::generateRsp(uint16_t value)
+void Rego6xxSim::generateStdRsp(uint16_t value)
 {
-    m_stdRsp[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
-    m_stdRsp[1] = (value >> 14) & 0x03;
-    m_stdRsp[2] = (value >>  7) & 0x7f;
-    m_stdRsp[3] = (value >>  0) & 0x7f;
-    m_stdRsp[4] = Rego6xxUtil::calculateChecksum(&m_stdRsp[1], STD_RSP_SIZE - 2);
+    m_rspSize = 5;
+
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[1] = (value >> 14) & 0x03;
+    m_rspBuffer[2] = (value >>  7) & 0x7f;
+    m_rspBuffer[3] = (value >>  0) & 0x7f;
+    m_rspBuffer[4] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+}
+
+void Rego6xxSim::generateConfirmRsp()
+{
+    m_rspSize = 1;
+
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
 }
 
 void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
 {
     if (Rego6xxCtrl::CMD_SIZE != size)
     {
-        generateRsp(0);
+        generateStdRsp(0);
     }
     else
     {
         switch(buffer[1])
         {
         case Rego6xxCtrl::CMD_ID_READ_FRONT_PANEL:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
 
         case Rego6xxCtrl::CMD_ID_WRITE_FRONT_PANEL:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_SYSTEM_REG:
@@ -152,6 +161,8 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
                 addr |= ((uint16_t)(buffer[4] & 0x7f)) <<  0;
 
                 Serial.printf("Read system register 0x%04X.\n", addr);
+
+                generateStdRsp(240);    /* 24.0 °C ... just a value */
             }
             break;
             
@@ -169,43 +180,45 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
                 value |= ((uint16_t)(buffer[7] & 0x7f)) <<  0;
 
                 Serial.printf("Write %u to system register 0x%04X.\n", value, addr);
+
+                generateConfirmRsp();
             }
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_TIMER_REG:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_WRITE_TIMER_REG:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_REG_1B61:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_WRITE_REG_1B61:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_DISPLAY:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_LAST_ERROR:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_PREV_ERROR:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_REGO_VERSION:
-            generateRsp(0); /* Not supported yet. */
+            generateStdRsp(0); /* Not supported yet. */
             break;
             
         default:
-            generateRsp(0); /* Unknown command */
+            generateStdRsp(0); /* Unknown command */
             break;
         }
     }

@@ -63,9 +63,12 @@ bool Rego6xxStdRsp::isValid() const
 {
     bool isValid = false;
 
-    if (m_response[RSP_SIZE - 1] == Rego6xxUtil::calculateChecksum(&m_response[1], RSP_SIZE - 2))
+    if (false == isPending())
     {
-        isValid = true;
+        if (m_response[RSP_SIZE - 1] == Rego6xxUtil::calculateChecksum(&m_response[1], RSP_SIZE - 2))
+        {
+            isValid = true;
+        }
     }
 
     return isValid;

@@ -63,7 +63,7 @@ bool Rego6xxConfirmRsp::isValid() const
 {
     bool isValid = false;
 
-    if (m_response[RSP_SIZE - 1] == Rego6xxUtil::calculateChecksum(&m_response[1], RSP_SIZE - 2))
+    if (false == m_isPending)
     {
         isValid = true;
     }
@@ -84,17 +84,16 @@ uint8_t Rego6xxConfirmRsp::getDevAddr() const
     return devAddr;
 }
 
-uint16_t Rego6xxConfirmRsp::getValue() const
+bool Rego6xxConfirmRsp::isConfirmed() const
 {
-    uint16_t data = 0;
+    bool isConfirmed = false;
 
-    if ((false == isPending()) &&
-        (true == isValid()))
+    if (false == m_isPending)
     {
-        /* TODO */
+        isConfirmed = true;
     }
 
-    return data;
+    return isConfirmed;
 }
 
 /******************************************************************************
