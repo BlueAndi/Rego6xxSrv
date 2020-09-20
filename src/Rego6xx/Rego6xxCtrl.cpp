@@ -89,6 +89,21 @@ const Rego6xxConfirmRsp* Rego6xxCtrl::writeSysReg(Rego6xxCtrl::SysRegAddr sysReg
     return rsp;
 }
 
+const Rego6xxErrorRsp* Rego6xxCtrl::readLastError()
+{
+    const Rego6xxErrorRsp*  rsp = nullptr;
+
+    if (nullptr == m_pendingRsp)
+    {
+        writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_READ_LAST_ERROR, 0, 0);
+        m_errorRsp.acquire();
+        m_pendingRsp    = &m_errorRsp;
+        rsp             = &m_errorRsp;
+    }
+
+    return rsp;
+}
+
 const Rego6xxStdRsp* Rego6xxCtrl::readRegoVersion()
 {
     const Rego6xxStdRsp*    rsp = nullptr;

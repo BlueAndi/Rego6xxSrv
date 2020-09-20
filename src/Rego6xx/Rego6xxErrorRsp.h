@@ -25,14 +25,14 @@
     DESCRIPTION
 *******************************************************************************/
 /**
- * @brief  Rego6xx heatpump controller simulator
+ * @brief  Rego6xx heatpump controller error response
  * @author Andreas Merkle <web@blue-andi.de>
  *
  * @{
  */
 
-#ifndef __REGO6xx_SIM_H__
-#define __REGO6xx_SIM_H__
+#ifndef __REGO6XX_ERROR_RSP_H__
+#define __REGO6XX_ERROR_RSP_H__
 
 /******************************************************************************
  * Compile Switches
@@ -42,6 +42,8 @@
  * Includes
  *****************************************************************************/
 #include <Arduino.h>
+#include "Rego6xxRsp.h"
+#include "SimpleTimer.hpp"
 
 /******************************************************************************
  * Macros
@@ -52,122 +54,93 @@
  *****************************************************************************/
 
 /**
- * Rego6xx heatpump controller simulator.
- * Used for testing purposes.
+ * A response of the Rego6xx heatpump controller, containing a error log message.
  */
-class Rego6xxSim : public Stream
+class Rego6xxErrorRsp : public Rego6xxRsp
 {
 public:
 
     /**
-     * Constructs the Rego6xx heatpump controller simulator.
+     * Constructs a empty response.
+     * 
+     * @param[in] stream    Input stream from heatpump controller.
      */
-    Rego6xxSim() :
-        m_readIndex(0),
-        m_rspBuffer(),
-        m_rspSize(0)
+    Rego6xxErrorRsp(Stream& stream) :
+        Rego6xxRsp(),
+        m_stream(stream),
+        m_response(),
+        m_timer()
     {
     }
 
     /**
-     * Destroys the Rego6xx heatpump controller simulator.
+     * Destroys a response.
      */
-    ~Rego6xxSim()
+    ~Rego6xxErrorRsp()
     {
     }
 
     /**
-     * Get the number of available data.
+     * Is response valid?
      * 
-     * @return Number of byte which are available
+     * @return If response is valid it will return true otherwise false.
      */
-    int available() override
-    {
-        return m_rspSize - m_readIndex;
-    }
+    bool isValid() const override;
 
     /**
-     * Read a single data byte.
+     * Get device address.
      * 
-     * @return Single data byte
+     * @return Device address
      */
-    int read() override;
+    uint8_t getDevAddr() const override;
 
     /**
-     * Read a single data byte, but without increasing the internal read position.
+     * Get error id.
      * 
-     * @return Single data byte
+     * @return Error id
      */
-    int peek() override;
+    uint8_t getErrorId() const;
 
     /**
-     * Not supported!
+     * Get error log.
      * 
-     * @param[in] data  Single data byte
-     * 
-     * @return Number of written data byte
+     * @return Error log
      */
-    size_t write(uint8_t data) override
-    {
-        /* Not supported. */
-        return 0;
-    }
+    String getErrorLog() const;
 
     /**
-     * Write a TCP message.
+     * Get error in user friendly form.
      * 
-     * @param[in] buffer    Message buffer
-     * @param[in] size      Message buffer size in byte
-     * 
-     * @return Number of written data byte
+     * @return Error description
      */
-    size_t write(const uint8_t* buffer, size_t size) override;
+    String getErrorDescription() const;
 
 private:
 
-    static const uint8_t    RSP_BUFFER_SIZE = 64;    /**< Rego6xx response buffer size in byte. */
+    /** Response size in bytes */
+    static const uint8_t    RSP_SIZE    = 42;
 
-    uint8_t m_readIndex;                    /**< Read index in the standard response buffer. */
-    uint8_t m_rspBuffer[RSP_BUFFER_SIZE];   /**< Standard response buffer */
-    size_t  m_rspSize;                      /**< Size of current filled response buffer */
+    /** Timeout in ms */
+    static const uint32_t   TIMEOUT     = (30UL * 1000UL);
 
-    /**
-     * Generate a valid standard response with the given value.
-     * 
-     * @param[in] value Value used for the response
-     */
-    void generateStdRsp(uint16_t value);
+    Stream&     m_stream;               /**< Input stream from heatpump controller. */
+    uint8_t     m_response[RSP_SIZE];   /**< Response message */
+    SimpleTimer m_timer;                /**< Used for response timeout observation. */
 
-    /**
-     * Generate a valid confirmation response.
-     */
-    void generateConfirmRsp();
+    Rego6xxErrorRsp();
 
     /**
-     * Generate a valid text response with the given value.
-     * 
-     * @param[in] text Text used for the response
+     * Receive response. This is called by the controller.
      */
-    void generateTextRsp(const String& text);
-    
-    /**
-     * Generate a valid text response with the given value.
-     */
-    void generateErrprRsp();
+    void receive() override;
 
-    /**
-     * Prepare response by checking the received command.
-     * 
-     * @param[in] buffer    Command buffer
-     * @param[in] size      Command buffer size in byte
-     */
-    void prepareRsp(const uint8_t* buffer, size_t size);
+    friend Rego6xxCtrl;
 };
 
 /******************************************************************************
  * Functions
  *****************************************************************************/
 
-#endif  /* __REGO6xx_SIM_H__ */
+#endif  /* __REGO6XX_ERROR_RSP_H__ */
 
 /** @} */

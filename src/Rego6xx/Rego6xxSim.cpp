@@ -134,6 +134,50 @@ void Rego6xxSim::generateConfirmRsp()
     m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
 }
 
+void Rego6xxSim::generateTextRsp(const String& text)
+{
+    const uint8_t   MAX_LEN = 20;
+    uint8_t         idx     = 0;
+
+    m_rspSize = 42;
+
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+
+    while((MAX_LEN > idx) && (text.length() > idx))
+    {
+        m_rspBuffer[idx + 1] = (static_cast<uint8_t>(text[idx]) & 0xf0) >> 4;
+        m_rspBuffer[idx + 2] = (static_cast<uint8_t>(text[idx]) & 0x0f) >> 0;
+        idx += 2;
+    }
+
+    m_rspBuffer[4] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+}
+
+void Rego6xxSim::generateErrprRsp()
+{
+    const uint8_t   data[]  =
+    {
+        0x01, 0x06, 0x03, 0x00, 0x03, 0x02, 0x03, 0x01, 
+        0x03, 0x00, 0x03, 0x00, 0x03, 0x09, 0x02, 0x00, 
+        0x03, 0x01, 0x03, 0x08, 0x03, 0x0A, 0x03, 0x02, 
+        0x03, 0x01, 0x03, 0x0A, 0x03, 0x00, 0x03, 0x03, 
+        0x00, 0x00, 0x00, 0x01, 0x04, 0x06, 0x00, 0x02
+    };
+    uint8_t         idx     = 0;
+
+    m_rspSize = 42;
+
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+
+    while((sizeof(data) / sizeof(data[1])) > idx)
+    {
+        m_rspBuffer[idx + 1] = data[idx];
+        ++idx;
+    }
+
+    m_rspBuffer[41] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+}
+
 void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
 {
     if (Rego6xxCtrl::CMD_SIZE != size)
@@ -149,7 +193,7 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
 
         case Rego6xxCtrl::CMD_ID_WRITE_FRONT_PANEL:
-            generateStdRsp(0); /* Not supported yet. */
+            generateConfirmRsp(); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_SYSTEM_REG:
@@ -190,7 +234,7 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
             
         case Rego6xxCtrl::CMD_ID_WRITE_TIMER_REG:
-            generateStdRsp(0); /* Not supported yet. */
+            generateConfirmRsp(); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_REG_1B61:
@@ -198,19 +242,19 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
             
         case Rego6xxCtrl::CMD_ID_WRITE_REG_1B61:
-            generateStdRsp(0); /* Not supported yet. */
+            generateConfirmRsp(); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_DISPLAY:
-            generateStdRsp(0); /* Not supported yet. */
+            generateTextRsp(""); /* Not supported yet. */
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_LAST_ERROR:
-            generateStdRsp(0); /* Not supported yet. */
+            generateErrprRsp();
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_PREV_ERROR:
-            generateStdRsp(0); /* Not supported yet. */
+            generateErrprRsp();
             break;
             
         case Rego6xxCtrl::CMD_ID_READ_REGO_VERSION:

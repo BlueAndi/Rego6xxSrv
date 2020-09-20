@@ -44,6 +44,7 @@
 #include <Arduino.h>
 #include "Rego6xxStdRsp.h"
 #include "Rego6xxConfirmRsp.h"
+#include "Rego6xxErrorRsp.h"
 
 /******************************************************************************
  * Macros
@@ -146,7 +147,8 @@ public:
         m_stream(stream),
         m_pendingRsp(nullptr),
         m_stdRsp(stream),
-        m_confirmRsp(stream)
+        m_confirmRsp(stream),
+        m_errorRsp(stream)
     {
     }
 
@@ -175,6 +177,13 @@ public:
      * @return Asynchronous response
      */
     const Rego6xxConfirmRsp* writeSysReg(SysRegAddr sysRegAddr, uint16_t value);
+
+    /**
+     * Read last error description.
+     * 
+     * @return Asynchronous response
+     */
+    const Rego6xxErrorRsp* readLastError();
 
     /**
      * Read version of Rego6xxx controller.
@@ -237,6 +246,7 @@ private:
     Rego6xxRsp*         m_pendingRsp;   /**< Current pending response */
     Rego6xxStdRsp       m_stdRsp;       /**< Standard response */
     Rego6xxConfirmRsp   m_confirmRsp;   /**< Confirmation response */
+    Rego6xxErrorRsp     m_errorRsp;     /**< Error log response */
 
     Rego6xxCtrl();
 
