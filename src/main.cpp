@@ -98,7 +98,8 @@ typedef enum
     STATUS_ID_OK = 0,   /**< Successful */
     STATUS_ID_EPENDING, /**< Already pending */
     STATUS_ID_EINPUT,   /**< Input data invalid */
-    STATUS_ID_EPAR      /**< Parameter is missing */
+    STATUS_ID_EPAR,     /**< Parameter is missing */
+    STATUS_ID_EINTERNAL /**< Unknown internal error */
 
 } StatusId;
 
@@ -113,6 +114,7 @@ static void handleRoot(EthernetClient& client, const HttpRequest& httpRequest);
 static void handleSensorGetReq(EthernetClient& client, const HttpRequest& httpRequest);
 static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpRequest);
 static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRequest);
+static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& httpRequest);
 static const Rego6xxStdRsp* readNextTemperatures(const TemperatureId& lastTemperature, TemperatureId& nextTemperature);
 
 /******************************************************************************
@@ -156,7 +158,7 @@ static const char               HTML_PAGE_TAIL[] PROGMEM    = "</body>\r\n"
                                                             "</html>";
 
 /** Number of supported web request routes. */
-static const uint8_t            NUM_ROUTES                  = 4;
+static const uint8_t            NUM_ROUTES                  = 5;
 
 /** Web request router */
 static WebReqRouter<NUM_ROUTES> gWebReqRouter;
@@ -200,14 +202,14 @@ static Temperature              gTemperatures[TEMPERATURE_ID_MAX];
 /** Current requested temperature value. */
 static TemperatureId            gReqTemp                    = TEMPERATURE_ID_MAX;
 
-/** Pending Rego6xx response, used to read temperatures. */
-static const Rego6xxStdRsp*     gRegoRsp                    = nullptr;
-
 /** Contains the temperature, which shall be written. */
 static Temperature              gTemperatureToWrite;
 
 /** Signals to set a new temperature value. */
 static bool                     gWriteTemperature           = false;
+
+/** Pending Rego6xx response, used to read temperatures. */
+static const Rego6xxStdRsp*     gRegoRsp                    = nullptr;
 
 /** Pending Rego6xx response, used to write temperature value. */
 static const Rego6xxConfirmRsp* gRegoWriteTemperatureRsp    = nullptr;
@@ -267,6 +269,11 @@ void setup()
         }
 
         if (false == gWebReqRouter.addRoute(ArduinoHttpServer::Method::Post, "/api/debug", handleDebugPostReq))
+        {
+            LOG_ERROR(F("Failed to add route."));
+        }
+
+        if (false == gWebReqRouter.addRoute(ArduinoHttpServer::Method::Get, "/api/lastError", handleLastErrorGetReq))
         {
             LOG_ERROR(F("Failed to add route."));
         }
@@ -669,8 +676,7 @@ static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRe
     JsonObject                          jsonData        = jsonDocRsp.createNestedObject("data");
 
     /* Any command pending? */
-    if ((nullptr != gRegoRsp) ||
-        (nullptr != gRegoWriteTemperatureRsp))
+    if (true == gRego6xxCtrl.isPending())
     {
         jsonDocRsp["status"] = STATUS_ID_EPENDING;
     }
@@ -692,6 +698,57 @@ static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRe
     }
 
     (void)serializeJson(jsonDocRsp, data);
+
+    httpReply.send(data);
+
+    return;
+}
+
+/**
+ * Handle GET last error access.
+ * 
+ * @param[in] client        Ethernet client, used to send the response.
+ * @param[in] httpRequest   The http request itself.
+ */
+static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& httpRequest)
+{
+    ArduinoHttpServer::StreamHttpReply  httpReply(client, "application/json");
+    String                              data;
+    DynamicJsonDocument                 jsonDoc(256);
+    JsonObject                          jsonData        = jsonDoc.createNestedObject("data");
+
+    /* Any command pending? */
+    if (true == gRego6xxCtrl.isPending())
+    {
+        jsonDoc["status"] = STATUS_ID_EPENDING;
+    }
+    else
+    {
+        const Rego6xxErrorRsp*  errorRsp = gRego6xxCtrl.readLastError();
+
+        if (nullptr == errorRsp)
+        {
+            jsonDoc["status"] = STATUS_ID_EINTERNAL;
+        }
+        else
+        {
+            /* Wait till response arrived.
+             * Note, the there is already a timeout observation done by the controller.
+             */
+            while(true == errorRsp->isPending())
+            {
+                gRego6xxCtrl.process();
+            }
+
+            jsonData["errorId"]     = errorRsp->getErrorId();
+            jsonData["log"]         = errorRsp->getErrorLog();
+            jsonData["description"] = errorRsp->getErrorDescription();
+
+            jsonDoc["status"] = STATUS_ID_OK;
+        }
+    }
+
+    (void)serializeJson(jsonDoc, data);
 
     httpReply.send(data);
 

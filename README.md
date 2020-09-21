@@ -21,6 +21,7 @@ It runs on the AVR-NET-IO board from Pollin.
   - [Get temperature value (GET /api/sensors/<sensor>)](#get-temperature-value-get-apisensorssensor)
   - [Set temperature value (POST /api/sensors)](#set-temperature-value-post-apisensors)
   - [Send raw command (POST /api/debug)](#send-raw-command-post-apidebug)
+  - [Get last error information (GET /api/lastError)](#get-last-error-information-get-apilasterror)
 - [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
 - [License](#license)
 
@@ -145,6 +146,20 @@ Response:
 ```
 { "data": {
     "response": "8100022C2E"
+  },
+  "status": 0
+}
+```
+
+## Get last error information (GET /api/lastError)
+Get last error information from the heatpump.
+
+Response:
+```
+{ "data": {
+    "errorId": 22,
+    "log": "021009 18:21:03",
+    "description": "Varmetr. delta high"
   },
   "status": 0
 }

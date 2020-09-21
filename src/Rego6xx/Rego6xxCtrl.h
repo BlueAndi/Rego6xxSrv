@@ -231,6 +231,23 @@ public:
         }
     }
 
+    /**
+     * Any response pending?
+     * 
+     * @return If waiting for a response, it will return true otherwise false.
+     */
+    bool isPending() const
+    {
+        bool isPending = false;
+
+        if (nullptr != m_pendingRsp)
+        {
+            isPending = true;
+        }
+
+        return isPending;
+    }
+
     /** Device address of heat pump controller */
     static const uint8_t    DEV_ADDR_HEATPUMP   = 0x81;
 
