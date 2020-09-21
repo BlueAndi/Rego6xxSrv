@@ -94,7 +94,7 @@ uint8_t Rego6xxErrorRsp::getErrorId() const
     if ((false == isPending()) &&
         (true == isValid()))
     {
-        const uint8_t   ERROR_ID_START_IDX  = 2;
+        const uint8_t   ERROR_ID_START_IDX  = 1;
         uint8_t         column              = m_response[ERROR_ID_START_IDX + 0] & 0x0f;
         uint8_t         row                 = m_response[ERROR_ID_START_IDX + 1] & 0x0f;
         
@@ -122,8 +122,8 @@ String Rego6xxErrorRsp::getErrorLog() const
          */
         while((MAX_LEN + TEXT_START_IDX) > idx)
         {
-            uint8_t column      = m_response[idx] & 0x0f;
-            uint8_t row         = m_response[idx] & 0x0f;
+            uint8_t column      = m_response[idx + 0] & 0x0f;
+            uint8_t row         = m_response[idx + 1] & 0x0f;
             uint8_t character   = (column << 4) | (row << 0);
 
             text.concat(static_cast<char>(character));
