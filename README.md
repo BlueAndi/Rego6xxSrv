@@ -5,6 +5,7 @@ It runs on the AVR-NET-IO board from Pollin.
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://choosealicense.com/licenses/mit/)
 [![Repo Status](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 [![Release](https://img.shields.io/github/release/BlueAndi/Rego6xxSrv.svg)](https://github.com/BlueAndi/Rego6xxSrv/releases)
+[![PlatformIO CI](https://github.com/BlueAndi/Rego6xxSrv/workflows/PlatformIO%20CI/badge.svg?branch=master)](https://github.com/BlueAndi/Rego6xxSrv/actions?query=workflow%3A%22PlatformIO+CI%22)
 
 - [Rego6xx Server](#rego6xx-server)
 - [Motivation](#motivation)
