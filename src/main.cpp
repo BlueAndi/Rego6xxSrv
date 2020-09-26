@@ -115,6 +115,7 @@ static void handleSensorGetReq(EthernetClient& client, const HttpRequest& httpRe
 static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpRequest);
 static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRequest);
 static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& httpRequest);
+static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& httpRequest);
 static const Rego6xxStdRsp* readNextTemperatures(const TemperatureId& lastTemperature, TemperatureId& nextTemperature);
 
 /******************************************************************************
@@ -158,7 +159,7 @@ static const char               HTML_PAGE_TAIL[] PROGMEM    = "</body>\r\n"
                                                             "</html>";
 
 /** Number of supported web request routes. */
-static const uint8_t            NUM_ROUTES                  = 5;
+static const uint8_t            NUM_ROUTES                  = 6;
 
 /** Web request router */
 static WebReqRouter<NUM_ROUTES> gWebReqRouter;
@@ -274,6 +275,11 @@ void setup()
         }
 
         if (false == gWebReqRouter.addRoute(ArduinoHttpServer::Method::Get, "/api/lastError", handleLastErrorGetReq))
+        {
+            LOG_ERROR(F("Failed to add route."));
+        }
+
+        if (false == gWebReqRouter.addRoute(ArduinoHttpServer::Method::Get, "/api/frontPanel/?", handleFrontPanelGetReq))
         {
             LOG_ERROR(F("Failed to add route."));
         }
@@ -743,6 +749,91 @@ static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& htt
             jsonData["errorId"]     = errorRsp->getErrorId();
             jsonData["log"]         = errorRsp->getErrorLog();
             jsonData["description"] = errorRsp->getErrorDescription();
+
+            jsonDoc["status"] = STATUS_ID_OK;
+        }
+    }
+
+    (void)serializeJson(jsonDoc, data);
+
+    httpReply.send(data);
+
+    return;
+}
+
+/**
+ * Handle GET front panel access.
+ * 
+ * @param[in] client        Ethernet client, used to send the response.
+ * @param[in] httpRequest   The http request itself.
+ */
+static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& httpRequest)
+{
+    ArduinoHttpServer::StreamHttpReply  httpReply(client, "application/json");
+    String                              data;
+    String                              ledName         = httpRequest.getResource()[2]; /* /api/fronPanel/<name> */
+    DynamicJsonDocument                 jsonDoc(256);
+    JsonObject                          jsonData        = jsonDoc.createNestedObject("data");
+
+    if (0 > ledName.length())
+    {
+        jsonDoc["status"] = STATUS_ID_EPAR;
+    }
+    else
+    {
+        const Rego6xxBoolRsp*   boolRsp     = nullptr;
+        bool                    isNoMatch   = false;
+
+        if (0 != ledName.equalsIgnoreCase("power"))
+        {
+            boolRsp = gRego6xxCtrl.readFrontPanel(Rego6xxCtrl::FRONTPANEL_ADDR_POWER);
+        }
+        else if (0 != ledName.equalsIgnoreCase("pump"))
+        {
+            boolRsp = gRego6xxCtrl.readFrontPanel(Rego6xxCtrl::FRONTPANEL_ADDR_PUMP);
+        }
+        else if (0 != ledName.equalsIgnoreCase("heating"))
+        {
+            boolRsp = gRego6xxCtrl.readFrontPanel(Rego6xxCtrl::FRONTPANEL_ADDR_HEATING);
+        }
+        else if (0 != ledName.equalsIgnoreCase("boiler"))
+        {
+            boolRsp = gRego6xxCtrl.readFrontPanel(Rego6xxCtrl::FRONTPANEL_ADDR_BOILER);
+        }
+        else if (0 != ledName.equalsIgnoreCase("alarm"))
+        {
+            boolRsp = gRego6xxCtrl.readFrontPanel(Rego6xxCtrl::FRONTPANEL_ADDR_ALARM);
+        }
+        else
+        {
+            /* No match */
+            isNoMatch = true;
+        }
+
+        /* Really no match or not possible? */
+        if (nullptr == boolRsp)
+        {
+            if (false == isNoMatch)
+            {
+                jsonDoc["status"] = STATUS_ID_EINTERNAL;
+            }
+            else
+            {
+                jsonDoc["status"] = STATUS_ID_EPAR;
+            }
+        }
+        else
+        {
+            /* Wait till response arrived.
+             * Note, the there is already a timeout observation done by the controller.
+             */
+            while(true == boolRsp->isPending())
+            {
+                gRego6xxCtrl.process();
+            }
+
+            jsonData["name"]    = ledName;
+            jsonData["state"]   = boolRsp->getDevAddr();
 
             jsonDoc["status"] = STATUS_ID_OK;
         }

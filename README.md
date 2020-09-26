@@ -23,6 +23,7 @@ It runs on the AVR-NET-IO board from Pollin.
   - [Set temperature value (POST /api/sensors)](#set-temperature-value-post-apisensors)
   - [Send raw command (POST /api/debug)](#send-raw-command-post-apidebug)
   - [Get last error information (GET /api/lastError)](#get-last-error-information-get-apilasterror)
+  - [Get frontpanel LED state (GET /api/frontPanel/<led>)](#get-frontpanel-led-state-get-apifrontpanelled)
 - [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
 - [License](#license)
 
@@ -165,6 +166,28 @@ Response:
   "status": 0
 }
 ```
+
+## Get frontpanel LED state (GET /api/frontPanel/<led>)
+Get state of frontpanel LED from the heatpump.
+
+```<led>```:
+* power - Power LED
+* pump - Pump LED
+* heating - Heating LED
+* boiler - Boiler LED
+* alarm - Alarm LED
+
+Response:
+```
+{ "data": {
+    "name": "power",
+    "state": true
+  },
+  "status":0
+}
+```
+
+Status 0 means successful. If the request fails, it the status will be non-zero and data is empty.
 
 # Issues, Ideas And Bugs
 If you have further ideas or you found some bugs, great! Create a [issue](https://github.com/BlueAndi/Rego6xxSrv/issues) or if you are able and willing to fix it by yourself, clone the repository and create a pull request.
