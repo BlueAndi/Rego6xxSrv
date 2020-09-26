@@ -99,7 +99,8 @@ typedef enum
     STATUS_ID_EPENDING, /**< Already pending */
     STATUS_ID_EINPUT,   /**< Input data invalid */
     STATUS_ID_EPAR,     /**< Parameter is missing */
-    STATUS_ID_EINTERNAL /**< Unknown internal error */
+    STATUS_ID_EINTERNAL,/**< Unknown internal error */
+    STATUS_ID_EINVALID  /**< Response is invalid */
 
 } StatusId;
 
@@ -746,11 +747,24 @@ static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& htt
                 gRego6xxCtrl.process();
             }
 
-            jsonData["errorId"]     = errorRsp->getErrorId();
-            jsonData["log"]         = errorRsp->getErrorLog();
-            jsonData["description"] = errorRsp->getErrorDescription();
+            /* Check response, the data and the destination address of the
+             * response message must be valid.
+             * If a timeout happened, the data is valid but the destination
+             * address won't match.
+             */
+            if ((false == errorRsp->isValid()) ||
+                (Rego6xxCtrl::DEV_ADDR_HOST != errorRsp->getDevAddr()))
+            {
+                jsonDoc["status"] = STATUS_ID_EINVALID;
+            }
+            else
+            {
+                jsonData["errorId"]     = errorRsp->getErrorId();
+                jsonData["log"]         = errorRsp->getErrorLog();
+                jsonData["description"] = errorRsp->getErrorDescription();
 
-            jsonDoc["status"] = STATUS_ID_OK;
+                jsonDoc["status"] = STATUS_ID_OK;
+            }
         }
     }
 
@@ -832,10 +846,23 @@ static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& ht
                 gRego6xxCtrl.process();
             }
 
-            jsonData["name"]    = ledName;
-            jsonData["state"]   = boolRsp->getDevAddr();
+            /* Check response, the data and the destination address of the
+             * response message must be valid.
+             * If a timeout happened, the data is valid but the destination
+             * address won't match.
+             */
+            if ((false == boolRsp->isValid()) ||
+                (Rego6xxCtrl::DEV_ADDR_HOST != boolRsp->getDevAddr()))
+            {
+                jsonDoc["status"] = STATUS_ID_EINVALID;
+            }
+            else
+            {
+                jsonData["name"]    = ledName;
+                jsonData["state"]   = boolRsp->getValue();
 
-            jsonDoc["status"] = STATUS_ID_OK;
+                jsonDoc["status"] = STATUS_ID_OK;
+            }
         }
     }
 
