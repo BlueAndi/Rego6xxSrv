@@ -56,12 +56,12 @@
 /**
  * Http request stream buffer type.
  */
-typedef ArduinoHttpServer::StreamHttpRequest<512> HttpRequest;
+typedef ArduinoHttpServer::StreamHttpRequest<256> HttpRequest;
 
 /**
  * The web request router is responsible to route a web request to the
  * right route and handle it.
- * 
+ *
  * @tparam[in] NUM_OF_ROUTES    Max. number of routes, which can be added.
  */
 template < uint8_t NUM_OF_ROUTES >
@@ -71,7 +71,7 @@ public:
 
     /**
      * Web request handler.
-     * 
+     *
      * @param[in] client        The ethernet client, used for the response.
      * @param[in] httpRequest   The web request itself.
      */
@@ -121,7 +121,7 @@ public:
 
     /**
      * Add a single route.
-     * 
+     *
      * @param[in] method    Http request method
      * @param[in] uri       Http request URI
      * @param[in] handler   Http request handler
@@ -154,10 +154,10 @@ public:
 
     /**
      * Handle a web request.
-     * 
+     *
      * @param[in] client        The ethernet client, used for the response.
      * @param[in] httpRequest   The http web request.
-     * 
+     *
      * @return If the request is handled, it will return true otherwise false.
      */
     bool handle(EthernetClient& client, const HttpRequest& httpRequest)

@@ -64,7 +64,7 @@ typedef enum
     LINK_STATUS_UNKNOWN = 0,  /**< Unknown link status */
     LINK_STATUS_DOWN,         /**< Link is up */
     LINK_STATUS_UP            /**< Link is down */
-    
+
 } LinkStatus;
 
 /** This type defines the temperature ids for the temperature sensors. */
@@ -321,7 +321,7 @@ void loop()
                 else if (0 != gTemperatureToWrite.getName().equals("gt3Off"))
                 {
                     gRegoWriteTemperatureRsp = gRego6xxCtrl.writeSysReg(Rego6xxCtrl::SYSREG_ADDR_GT3_OFF, gTemperatureToWrite.getRawTemperature());
-                }                
+                }
                 else
                 /* Should never happen. */
                 {
@@ -410,9 +410,9 @@ void loop()
 
 /**
  * Convert IP-address in byte form to user friendly string.
- * 
+ *
  * @param[in] ip    Array with 4 byte ip address
- * 
+ *
  * @return IP-address in user friendly form
  */
 static String ipToStr(const uint8_t* ip)
@@ -455,7 +455,7 @@ static void printNetworkSettings(void)
     tmp = F("DNS    : ");
     tmp += ipToStr(ether.dnsip);
     LOG_INFO(tmp.c_str());
-        
+
     return;
 }
 
@@ -497,11 +497,25 @@ static void handleNetwork(void)
 
         gLinkStatus = LINK_STATUS_UP;
 
-        /* Valid TCP data received? */
-        if (0 < pos)
+        /* Valid TCP payload received?
+         * Note, sometimes a invalid TCP payload is received, starting with a
+         * binary value. The first line of http must always start with a
+         * alpha character, therefore its checked this way.
+         */
+        if ((0 < pos) &&
+            (isAlpha(Ethernet::buffer[pos])))
         {
-            EthernetClient  client(&Ethernet::buffer[pos], len - pos);
+            EthernetClient  client(&Ethernet::buffer[pos], ether.getTcpPayloadLength());
             HttpRequest     httpRequest(client);
+
+#if defined(DEBUG)
+            Serial.printf("---> %u (%u)\n", pos, ether.getTcpPayloadLength());
+            for(uint16_t ii = 0; ii < ether.getTcpPayloadLength(); ++ii)
+            {
+                Serial.print(static_cast<char>(Ethernet::buffer[pos + ii]));
+            }
+            Serial.print("---\n");
+#endif  /* defined(DEBUG) */
 
             /* Parse the request */
             if (true == httpRequest.readRequest())
@@ -537,7 +551,7 @@ static void handleNetwork(void)
 
 /**
  * Handle GET root access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -557,7 +571,7 @@ static void handleRoot(EthernetClient& client, const HttpRequest& httpRequest)
 
 /**
  * Handle GET sensor access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -569,7 +583,7 @@ static void handleSensorGetReq(EthernetClient& client, const HttpRequest& httpRe
     DynamicJsonDocument                 jsonDoc(256);
     JsonObject                          jsonData        = jsonDoc.createNestedObject("data");
 
-    if (0 > sensorName.length())
+    if (0 == sensorName.length())
     {
         jsonDoc["status"] = STATUS_ID_EPAR;
     }
@@ -612,7 +626,7 @@ static void handleSensorGetReq(EthernetClient& client, const HttpRequest& httpRe
 
 /**
  * Handle POST sensor access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -648,7 +662,7 @@ static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpR
         {
             String  name    = jsonObj["name"];
             float   value   = jsonObj["value"].as<float>();
-            
+
             if ((0 != name.equals("gt3Target")) ||
                 (0 != name.equals("gt3On")) ||
                 (0 != name.equals("gt3Off")))
@@ -675,7 +689,7 @@ static void handleSensorPostReq(EthernetClient& client, const HttpRequest& httpR
 
 /**
  * Handle POST debug access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -719,7 +733,7 @@ static void handleDebugPostReq(EthernetClient& client, const HttpRequest& httpRe
 
 /**
  * Handle GET last error access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -771,6 +785,8 @@ static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& htt
 
                 jsonDoc["status"] = STATUS_ID_OK;
             }
+
+            gRego6xxCtrl.release();
         }
     }
 
@@ -783,7 +799,7 @@ static void handleLastErrorGetReq(EthernetClient& client, const HttpRequest& htt
 
 /**
  * Handle GET front panel access.
- * 
+ *
  * @param[in] client        Ethernet client, used to send the response.
  * @param[in] httpRequest   The http request itself.
  */
@@ -795,7 +811,7 @@ static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& ht
     DynamicJsonDocument                 jsonDoc(256);
     JsonObject                          jsonData        = jsonDoc.createNestedObject("data");
 
-    if (0 > ledName.length())
+    if (0 == ledName.length())
     {
         jsonDoc["status"] = STATUS_ID_EPAR;
     }
@@ -869,6 +885,8 @@ static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& ht
 
                 jsonDoc["status"] = STATUS_ID_OK;
             }
+
+            gRego6xxCtrl.release();
         }
     }
 
@@ -881,10 +899,10 @@ static void handleFrontPanelGetReq(EthernetClient& client, const HttpRequest& ht
 
 /**
  * Read next temperature value from heatpump.
- * 
+ *
  * @param[in] lastTemperature   Temperature id of last read temperature
  * @param[in] nextTemperature   Temperature id of next temperature read
- * 
+ *
  * @return Rego6xx standard response. A nullptr signals that all temperatures were read.
  */
 static const Rego6xxStdRsp* readNextTemperatures(const TemperatureId& lastTemperature, TemperatureId& nextTemperature)
