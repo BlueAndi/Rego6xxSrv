@@ -372,10 +372,16 @@ void loop()
         else if ((true == gRegoRsp->isUsed()) &&
                  (false == gRegoRsp->isPending()))
         {
-            /* The temperature is taken over only if the response is valid. */
-            if (true == gRegoRsp->isValid())
+            /* The temperature is taken over only if the response is valid and there was no timeout. */
+            if ((true == gRegoRsp->isValid()) &&
+                (Rego6xxCtrl::DEV_ADDR_HOST == gRegoRsp->getDevAddr()))
             {
                 gTemperatures[gReqTemp].setRawTemperature(gRegoRsp->getValue());
+            }
+            else
+            {
+                /* Temperature skipped */
+                ;
             }
 
             gRego6xxCtrl.release();
