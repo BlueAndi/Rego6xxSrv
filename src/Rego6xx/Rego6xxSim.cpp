@@ -120,7 +120,7 @@ void Rego6xxSim::generateStdRsp(uint16_t value)
 {
     m_rspSize = 5;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
     m_rspBuffer[1] = (value >> 14) & 0x03;
     m_rspBuffer[2] = (value >>  7) & 0x7f;
     m_rspBuffer[3] = (value >>  0) & 0x7f;
@@ -131,7 +131,7 @@ void Rego6xxSim::generateConfirmRsp()
 {
     m_rspSize = 1;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
 }
 
 void Rego6xxSim::generateTextRsp(const String& text)
@@ -141,7 +141,7 @@ void Rego6xxSim::generateTextRsp(const String& text)
 
     m_rspSize = 42;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
 
     while((MAX_LEN > idx) && (text.length() > idx))
     {
@@ -157,17 +157,17 @@ void Rego6xxSim::generateErrprRsp()
 {
     const uint8_t   data[]  =
     {
-        0x01, 0x06, 0x03, 0x00, 0x03, 0x02, 0x03, 0x01, 
-        0x03, 0x00, 0x03, 0x00, 0x03, 0x09, 0x02, 0x00, 
-        0x03, 0x01, 0x03, 0x08, 0x03, 0x0A, 0x03, 0x02, 
-        0x03, 0x01, 0x03, 0x0A, 0x03, 0x00, 0x03, 0x03, 
+        0x01, 0x06, 0x03, 0x00, 0x03, 0x02, 0x03, 0x01,
+        0x03, 0x00, 0x03, 0x00, 0x03, 0x09, 0x02, 0x00,
+        0x03, 0x01, 0x03, 0x08, 0x03, 0x0A, 0x03, 0x02,
+        0x03, 0x01, 0x03, 0x0A, 0x03, 0x00, 0x03, 0x03,
         0x00, 0x00, 0x00, 0x01, 0x04, 0x06, 0x00, 0x02
     };
     uint8_t         idx     = 0;
 
     m_rspSize = 42;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
 
     while((sizeof(data) / sizeof(data[1])) > idx)
     {
@@ -184,7 +184,7 @@ void Rego6xxSim::generateBoolRsp(bool value)
 
     m_rspSize = 5;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
     m_rspBuffer[1] = (u16Value >> 14) & 0x03;
     m_rspBuffer[2] = (u16Value >>  7) & 0x7f;
     m_rspBuffer[3] = (u16Value >>  0) & 0x7f;
@@ -218,7 +218,7 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
         case Rego6xxCtrl::CMD_ID_WRITE_FRONT_PANEL:
             generateConfirmRsp(); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_SYSTEM_REG:
             {
                 uint16_t    addr;
@@ -232,7 +232,7 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
                 generateStdRsp(240);    /* 24.0 °C ... just a value */
             }
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_WRITE_SYSTEM_REG:
             {
                 uint16_t    addr;
@@ -251,41 +251,41 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
                 generateConfirmRsp();
             }
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_TIMER_REG:
             generateStdRsp(0); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_WRITE_TIMER_REG:
             generateConfirmRsp(); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_REG_1B61:
             generateStdRsp(0); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_WRITE_REG_1B61:
             generateConfirmRsp(); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_DISPLAY:
             generateTextRsp(""); /* Not supported yet. */
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_LAST_ERROR:
             generateErrprRsp();
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_PREV_ERROR:
             generateErrprRsp();
             break;
-            
+
         case Rego6xxCtrl::CMD_ID_READ_REGO_VERSION:
             Serial.printf("Read Rego6xxx version.\n");
 
             generateStdRsp(0x0258); /* 0x0258 for Rego600 */
             break;
-            
+
         default:
             generateStdRsp(0); /* Unknown command */
             break;
