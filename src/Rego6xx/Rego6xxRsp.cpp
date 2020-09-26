@@ -62,6 +62,60 @@
  * Protected Methods
  *****************************************************************************/
 
+void Rego6xxRsp::receive()
+{
+    /* Response pending? */
+    if (true == m_isPending)
+    {
+        uint8_t*    buffer  = nullptr;
+        size_t      size    = 0;
+
+        getResponse(buffer, size);
+
+        /* Buffer for response available? */
+        if ((nullptr == buffer) ||
+            (0 == size))
+        {
+            m_stream.flush();
+            m_isPending = false;
+            m_timer.stop();
+        }
+        /* Start response timeout observation as soon as possible. */
+        else if (false == m_timer.isTimerRunning())
+        {
+            m_timer.start(TIMEOUT);
+        }
+        /* Timeout? */
+        else if (true == m_timer.isTimeout())
+        {
+            m_stream.flush();
+            m_isPending = false;
+            memset(buffer, 0, size);
+            m_timer.stop();
+        }
+        /* Response complete received? */
+        else if (static_cast<int>(size) <= m_stream.available())
+        {
+            uint8_t idx = 0;
+
+            while(size > idx)
+            {
+                buffer[idx] = m_stream.read();
+                ++idx;
+            }
+
+            m_isPending = false;
+            m_timer.stop();
+        }
+        /* Waiting for response. */
+        else
+        {
+            /* Nothing to do. */
+            ;
+        }
+    }
+}
+
 /******************************************************************************
  * Private Methods
  *****************************************************************************/

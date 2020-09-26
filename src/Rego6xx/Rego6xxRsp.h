@@ -42,6 +42,7 @@
  * Includes
  *****************************************************************************/
 #include <Arduino.h>
+#include "SimpleTimer.hpp"
 
 /******************************************************************************
  * Macros
@@ -63,10 +64,14 @@ public:
 
     /**
      * Constructs a empty response.
+     * 
+     * @param[in] stream    Input stream from heatpump controller.
      */
-    Rego6xxRsp() :
+    Rego6xxRsp(Stream& stream) :
+        m_stream(stream),
         m_isUsed(false),
-        m_isPending(false)
+        m_isPending(false),
+        m_timer()
     {
     }
 
@@ -113,8 +118,15 @@ public:
 
 protected:
 
-    bool    m_isUsed;       /**< Is response used by application. If no, the controller can use it again. */
-    bool    m_isPending;    /**< Is response pending or not. */
+    /** Timeout in ms */
+    static const uint32_t   TIMEOUT     = (30UL * 1000UL);
+
+    Stream&     m_stream;               /**< Input stream from heatpump controller. */
+    bool        m_isUsed;               /**< Is response used by application. If no, the controller can use it again. */
+    bool        m_isPending;            /**< Is response pending or not. */
+    SimpleTimer m_timer;                /**< Used for response timeout observation. */
+
+    Rego6xxRsp();
 
     /**
      * Acquire response. Used by the controller to signal that this response
@@ -139,7 +151,15 @@ protected:
     /**
      * Receive response. This is called by the controller.
      */
-    virtual void receive() = 0;
+    virtual void receive();
+
+    /**
+     * Get response buffer and its size.
+     * 
+     * @param[out]  buffer  Response buffer
+     * @param[out]  size    Response buffer size in byte
+     */
+    virtual void getResponse(uint8_t*& buffer, size_t& size) = 0;
 
     friend Rego6xxCtrl;
 };

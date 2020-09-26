@@ -66,10 +66,8 @@ public:
      * @param[in] stream    Input stream from heatpump controller.
      */
     Rego6xxStdRsp(Stream& stream) :
-        Rego6xxRsp(),
-        m_stream(stream),
-        m_response(),
-        m_timer()
+        Rego6xxRsp(stream),
+        m_response()
     {
     }
 
@@ -104,21 +102,23 @@ public:
 private:
 
     /** Response size in bytes */
-    static const uint8_t    RSP_SIZE    = 5;
+    static const size_t RSP_SIZE    = 5;
 
-    /** Timeout in ms */
-    static const uint32_t   TIMEOUT     = (30UL * 1000UL);
-
-    Stream&     m_stream;               /**< Input stream from heatpump controller. */
-    uint8_t     m_response[RSP_SIZE];   /**< Response message */
-    SimpleTimer m_timer;                /**< Used for response timeout observation. */
+    uint8_t m_response[RSP_SIZE];   /**< Response message */
 
     Rego6xxStdRsp();
 
     /**
-     * Receive response. This is called by the controller.
+     * Get response buffer and its size.
+     * 
+     * @param[out]  buffer  Response buffer
+     * @param[out]  size    Response buffer size in byte
      */
-    void receive() override;
+    void getResponse(uint8_t*& buffer, size_t& size) override
+    {
+        buffer  = m_response;
+        size    = sizeof(m_response);
+    }
 
     friend Rego6xxCtrl;
 };
