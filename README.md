@@ -75,6 +75,7 @@ After the bootloader is installed and running, the typical Arduino upload can be
 ## Used Libraries
 * [MightyCore](https://github.com/MCUdude/MightyCore) - Arduino core for ATmega644.
 * [EtherCard](https://github.com/njh/EtherCard) - Driver for the Microchip ENC28J60 chip.
+* [ArduinoHttpServer](https://github.com/QuickSander/ArduinoHttpServer) - Server side minimalistic object oriented HTTP protocol implementation.
 * [ArduinoJSON](https://arduinojson.org/) - JSON library.
 
 # REST API
