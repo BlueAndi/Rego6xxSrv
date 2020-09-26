@@ -119,6 +119,21 @@ const Rego6xxStdRsp* Rego6xxCtrl::readRegoVersion()
     return rsp;
 }
 
+const Rego6xxBoolRsp* Rego6xxCtrl::readFrontPanel(Rego6xxCtrl::FrontPanelAddr addr)
+{
+    const Rego6xxBoolRsp*   rsp = nullptr;
+
+    if (nullptr == m_pendingRsp)
+    {
+        writeCmd(DEV_ADDR_HEATPUMP, CMD_ID_READ_FRONT_PANEL, addr, 0);
+        m_boolRsp.acquire();
+        m_pendingRsp    = &m_boolRsp;
+        rsp             = &m_boolRsp;
+    }
+
+    return rsp;
+}
+
 String Rego6xxCtrl::writeDbg(uint8_t cmdId, uint16_t addr, uint16_t data)
 {
     uint8_t             cmdBuffer[CMD_SIZE];

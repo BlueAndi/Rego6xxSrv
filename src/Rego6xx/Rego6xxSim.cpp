@@ -178,6 +178,19 @@ void Rego6xxSim::generateErrprRsp()
     m_rspBuffer[41] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
 }
 
+void Rego6xxSim::generateBoolRsp(bool value)
+{
+    uint16_t u16Value = (false == value) ? 0 : 1;
+
+    m_rspSize = 5;
+
+    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HEATPUMP;
+    m_rspBuffer[1] = (u16Value >> 14) & 0x03;
+    m_rspBuffer[2] = (u16Value >>  7) & 0x7f;
+    m_rspBuffer[3] = (u16Value >>  0) & 0x7f;
+    m_rspBuffer[4] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+}
+
 void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
 {
     if (Rego6xxCtrl::CMD_SIZE != size)
@@ -189,7 +202,17 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
         switch(buffer[1])
         {
         case Rego6xxCtrl::CMD_ID_READ_FRONT_PANEL:
-            generateStdRsp(0); /* Not supported yet. */
+            {
+                uint16_t    addr;
+
+                addr  = ((uint16_t)(buffer[2] & 0x03)) << 14;
+                addr |= ((uint16_t)(buffer[3] & 0x7f)) <<  7;
+                addr |= ((uint16_t)(buffer[4] & 0x7f)) <<  0;
+
+                Serial.printf("Read front panel addr 0x%04X.\n", addr);
+
+                generateBoolRsp(true);
+            }
             break;
 
         case Rego6xxCtrl::CMD_ID_WRITE_FRONT_PANEL:

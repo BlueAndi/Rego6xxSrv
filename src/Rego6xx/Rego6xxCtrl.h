@@ -45,6 +45,7 @@
 #include "Rego6xxStdRsp.h"
 #include "Rego6xxConfirmRsp.h"
 #include "Rego6xxErrorRsp.h"
+#include "Rego6xxBoolRsp.h"
 
 /******************************************************************************
  * Macros
@@ -139,6 +140,18 @@ public:
     };
 
     /**
+     * Front panel LED addresses of Rego600
+     */
+    enum FrontPanelAddr
+    {
+        FRONTPANEL_ADDR_POWER   = 0x0012,   /**< Power LED */
+        FRONTPANEL_ADDR_PUMP    = 0x0013,   /**< Pump LED */
+        FRONTPANEL_ADDR_HEATING = 0x0014,   /**< Heating LED */
+        FRONTPANEL_ADDR_BOILER  = 0x0015,   /**< Boiler LED */
+        FRONTPANEL_ADDR_ALARM   = 0x0016,   /**< Alarm LED */
+    };
+
+    /**
      * Constructs the Rego6xx controller.
      * 
      * @param[in] stream    Input/Output stream connected to heatpump controller
@@ -148,7 +161,8 @@ public:
         m_pendingRsp(nullptr),
         m_stdRsp(stream),
         m_confirmRsp(stream),
-        m_errorRsp(stream)
+        m_errorRsp(stream),
+        m_boolRsp(stream)
     {
     }
 
@@ -193,6 +207,15 @@ public:
      * @return Asynchronous response
      */
     const Rego6xxStdRsp* readRegoVersion();
+
+    /**
+     * Read from front panel
+     * 
+     * @param[in] frontPanelAddr    Front panel address
+     * 
+     * @return Asynchronous response
+     */
+    const Rego6xxBoolRsp* readFrontPanel(FrontPanelAddr addr);
 
     /**
      * Write a value to the given address.
@@ -264,6 +287,7 @@ private:
     Rego6xxStdRsp       m_stdRsp;       /**< Standard response */
     Rego6xxConfirmRsp   m_confirmRsp;   /**< Confirmation response */
     Rego6xxErrorRsp     m_errorRsp;     /**< Error log response */
+    Rego6xxBoolRsp      m_boolRsp;      /**< Boolean response */
 
     Rego6xxCtrl();
 

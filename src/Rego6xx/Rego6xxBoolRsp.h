@@ -25,14 +25,14 @@
     DESCRIPTION
 *******************************************************************************/
 /**
- * @brief  Rego6xx heatpump controller confirmation response
+ * @brief  Rego6xx heatpump controller boolean response
  * @author Andreas Merkle <web@blue-andi.de>
  *
  * @{
  */
 
-#ifndef __REGO6XX_CONFIRM_RSP_H__
-#define __REGO6XX_CONFIRM_RSP_H__
+#ifndef __REGO6XX_BOOL_RSP_H__
+#define __REGO6XX_BOOL_RSP_H__
 
 /******************************************************************************
  * Compile Switches
@@ -52,13 +52,10 @@
  * Types and Classes
  *****************************************************************************/
 
-/* Forward declaration. */
-class Rego6xxCtrl;
-
 /**
- * A response of the Rego6xx heatpump controller, containing a uint16_t value.
+ * A response of the Rego6xx heatpump controller, containing a boolean value.
  */
-class Rego6xxConfirmRsp : public Rego6xxRsp
+class Rego6xxBoolRsp : public Rego6xxRsp
 {
 public:
 
@@ -67,7 +64,7 @@ public:
      * 
      * @param[in] stream    Input stream from heatpump controller.
      */
-    Rego6xxConfirmRsp(Stream& stream) :
+    Rego6xxBoolRsp(Stream& stream) :
         Rego6xxRsp(stream),
         m_response()
     {
@@ -76,7 +73,7 @@ public:
     /**
      * Destroys a response.
      */
-    ~Rego6xxConfirmRsp()
+    ~Rego6xxBoolRsp()
     {
     }
 
@@ -95,20 +92,20 @@ public:
     uint8_t getDevAddr() const override;
 
     /**
-     * Is confirmation received?
+     * Get value.
      * 
-     * @return If confirmation is received, it will return true otherwise false.
+     * @return value
      */
-    bool isConfirmed() const;
+    bool getValue() const;
 
 private:
 
     /** Response size in bytes */
-    static const size_t RSP_SIZE    = 1;
+    static const size_t RSP_SIZE    = 5;
 
     uint8_t m_response[RSP_SIZE];   /**< Response message */
 
-    Rego6xxConfirmRsp();
+    Rego6xxBoolRsp();
 
     /**
      * Get response buffer and its size.
@@ -129,6 +126,6 @@ private:
  * Functions
  *****************************************************************************/
 
-#endif  /* __REGO6XX_CONFIRM_RSP_H__ */
+#endif  /* __REGO6XX_BOOL_RSP_H__ */
 
 /** @} */

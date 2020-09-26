@@ -156,6 +156,13 @@ private:
     void generateErrprRsp();
 
     /**
+     * Generate a valid boolean response with the given value.
+     * 
+     * @param[in] value Value used for the response
+     */
+    void generateBoolRsp(bool value);
+
+    /**
      * Prepare response by checking the received command.
      * 
      * @param[in] buffer    Command buffer
