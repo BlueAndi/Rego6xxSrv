@@ -545,6 +545,12 @@ static void handleNetwork(void)
 
                 httpReply.send("Bad Request");
             }
+
+            /* Send TCP message now.
+             * Note, all previously calls to to httpReply will only push it to the internal
+             * client buffer.
+             */
+            client.send();
         }
     }
 }
