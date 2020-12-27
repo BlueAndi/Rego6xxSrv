@@ -100,8 +100,9 @@ Get a temperature value in °C from the heatpump.
 * gt3Off - Hot water off temperature in °C
 
 Response:
-```
-{ "data": {
+```json
+{
+  "data": {
     "name": "gt1",
     "value": 30
   },
@@ -122,12 +123,12 @@ JSON parameter:
 * value: Temperature value in °C as float.
 
 Example:
-```
+```bash
 $ curl -H "Content-Type: application/json" --data '{"name": "gt3Target", "value": 20.4}' http://192.168.1.3/api/sensors
 ```
 
 Response:
-```
+```json
 { "status": 0 }
 ```
 
@@ -142,13 +143,14 @@ JSON parameter:
 * value: Rego6xx Register value.
 
 Example:
-```
+```bash
 $ curl -H "Content-Type: application/json" --data '{"cmdId": 2, "addr": 521, "value": 0 }' http://192.168.1.3/api/debug
 ```
 
 Response:
-```
-{ "data": {
+```json
+{
+  "data": {
     "response": "8100022C2E"
   },
   "status": 0
@@ -159,8 +161,9 @@ Response:
 Get last error information from the heatpump.
 
 Response:
-```
-{ "data": {
+```json
+{
+  "data": {
     "errorId": 22,
     "log": "021009 18:21:03",
     "description": "Varmetr. delta high"
@@ -180,8 +183,9 @@ Get state of frontpanel LED from the heatpump.
 * alarm - Alarm LED
 
 Response:
-```
-{ "data": {
+```json
+{
+  "data": {
     "name": "power",
     "state": true
   },
