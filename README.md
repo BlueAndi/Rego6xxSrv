@@ -26,6 +26,7 @@ It runs on the AVR-NET-IO board from Pollin.
   - [Get frontpanel LED state (GET /api/frontPanel/<led>)](#get-frontpanel-led-state-get-apifrontpanelled)
 - [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
 - [License](#license)
+- [Contribution](#contribution)
 
 # Motivation
 I have a photovoltaic system (PV) on the roof of the house. If the PV provides enough energy, the idea is to store it in form of hot water with the heatpump.
@@ -195,3 +196,7 @@ If you have further ideas or you found some bugs, great! Create a [issue](https:
 
 # License
 The whole source code is published under the [MIT license](http://choosealicense.com/licenses/mit/).
+
+# Contribution
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, shall be licensed as above, without any
+additional terms or conditions.
