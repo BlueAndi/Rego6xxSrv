@@ -33,7 +33,10 @@
  * Includes
  *****************************************************************************/
 #include <Arduino.h>
-#include <EtherCard.h>
+#include <SPI.h>
+#include <EthernetENC.h>
+#include <EthernetClient.h>
+#include <EthernetServer.h>
 #include <ArduinoHttpServer.h>
 #include <ArduinoJson.h>
 
@@ -108,7 +111,7 @@ typedef enum
  * Prototypes
  *****************************************************************************/
 
-static String ipToStr(const uint8_t* ip);
+static String ipToStr(IPAddress ip);
 static void printNetworkSettings(void);
 static void handleNetwork(void);
 static void handleRoot(EthernetClient& client, const HttpRequest& httpRequest);
@@ -138,12 +141,6 @@ static const uint32_t           SERIAL_BAUDRATE             = 19200U;
 /** Ethernet interface MAC address */
 static const byte               DEVICE_MAC_ADDR[]           = { 0x00, 0x22, 0xf9, 0x01, 0x0B, 0x82 };
 
-/** Size of ethernet buffer in byte. */
-static const size_t             ETHERNET_BUFFER_SIZE        = 768;
-
-/* Defines the provided buffer for ethernet package handling. */
-byte                            Ethernet::buffer[ETHERNET_BUFFER_SIZE];
-
 /** Current ethernet link status. */
 static LinkStatus               gLinkStatus                 = LINK_STATUS_UNKNOWN;
 
@@ -164,6 +161,12 @@ static const uint8_t            NUM_ROUTES                  = 6;
 
 /** Web request router */
 static WebReqRouter<NUM_ROUTES> gWebReqRouter;
+
+/** Webserver port number */
+static const uint16_t           WEB_SRV_PORT                = 80;
+
+/** Webserver */
+static EthernetServer           gWebServer(WEB_SRV_PORT);
 
 /** Duration after the first time all sensors are read. */
 static const uint32_t           SENSOR_READ_INITIAL         = (2UL * 1000UL);
@@ -225,16 +228,32 @@ static const Rego6xxConfirmRsp* gRegoWriteTemperatureRsp    = nullptr;
  */
 void setup()
 {
+    bool isError = false;
+
     /* Setup serial interface */
     Serial.begin(SERIAL_BAUDRATE);
 
     LOG_INFO(F("Device starts up."));
 
-    if (0 == ether.begin(ETHERNET_BUFFER_SIZE, DEVICE_MAC_ADDR))
+    if (0 == Ethernet.begin(DEVICE_MAC_ADDR))
     {
-        LOG_ERROR(F("Failed to initialize Ethernet controller"));
+        if (LinkOFF == Ethernet.linkStatus())
+        {
+            LOG_INFO(F("Ethernet cable not connected."));
+        }
+        else if (EthernetNoHardware == Ethernet.hardwareStatus())
+        {
+            LOG_ERROR(F("Ethernet controller not found."));
+            isError = true;
+        }
+        else
+        {
+            LOG_ERROR(F("Couldn't initialize ethernet controller."));
+            isError = true;
+        }
     }
-    else
+
+    if (false == isError)
     {
         LOG_INFO(F("Ethernet controller initialized."));
 
@@ -283,6 +302,18 @@ void setup()
         if (false == gWebReqRouter.addRoute(ArduinoHttpServer::Method::Get, "/api/frontPanel/?", handleFrontPanelGetReq))
         {
             LOG_ERROR(F("Failed to add route."));
+        }
+
+        /* Start listening for clients. */
+        gWebServer.begin();
+    }
+
+    if (true == isError)
+    {
+        /* Wait infinite. */
+        while(1)
+        {
+            delay(1);
         }
     }
 
@@ -411,11 +442,11 @@ void loop()
 /**
  * Convert IP-address in byte form to user friendly string.
  *
- * @param[in] ip    Array with 4 byte ip address
+ * @param[in] ip    IP address
  *
  * @return IP-address in user friendly form
  */
-static String ipToStr(const uint8_t* ip)
+static String ipToStr(IPAddress ip)
 {
     String  ipAddr;
     uint8_t idx = 0;
@@ -441,19 +472,19 @@ static void printNetworkSettings(void)
     String tmp;
 
     tmp = F("IP     : ");
-    tmp += ipToStr(ether.myip);
+    tmp += ipToStr(Ethernet.localIP());
     LOG_INFO(tmp.c_str());
 
     tmp = F("Subnet : ");
-    tmp += ipToStr(ether.netmask);
+    tmp += ipToStr(Ethernet.subnetMask());
     LOG_INFO(tmp.c_str());
 
     tmp = F("Gateway: ");
-    tmp += ipToStr(ether.gwip);
+    tmp += ipToStr(Ethernet.gatewayIP());
     LOG_INFO(tmp.c_str());
 
     tmp = F("DNS    : ");
-    tmp += ipToStr(ether.dnsip);
+    tmp += ipToStr(Ethernet.dnsServerIP());
     LOG_INFO(tmp.c_str());
 
     return;
@@ -464,11 +495,22 @@ static void printNetworkSettings(void)
  */
 static void handleNetwork(void)
 {
-    uint16_t    len = ether.packetReceive();
-    uint16_t    pos = ether.packetLoop(len);
+    EthernetLinkStatus  linkStatus = Ethernet.linkStatus();
 
+    Ethernet.maintain();
+
+    /* Link status unknown? */
+    if (Unknown == linkStatus)
+    {
+        if (LINK_STATUS_UNKNOWN != gLinkStatus)
+        {
+            LOG_INFO(F("Link is unknown."));
+        }
+
+        gLinkStatus = LINK_STATUS_UNKNOWN;
+    }
     /* Link down? */
-    if (false == ENC28J60::isLinkUp())
+    else if (LinkOFF == linkStatus)
     {
         if (LINK_STATUS_DOWN != gLinkStatus)
         {
@@ -480,42 +522,20 @@ static void handleNetwork(void)
     else
     /* Link is up */
     {
+        EthernetClient client = gWebServer.available();
+
         if (LINK_STATUS_UP != gLinkStatus)
         {
             LOG_INFO(F("Link is up."));
 
-            /* Get IP address via DHCP */
-            if (false == ether.dhcpSetup())
-            {
-                LOG_ERROR(F("DHCP setup failed."));
-            }
-            else
-            {
-                printNetworkSettings();
-            }
+            printNetworkSettings();
         }
 
         gLinkStatus = LINK_STATUS_UP;
 
-        /* Valid TCP payload received?
-         * Note, sometimes a invalid TCP payload is received, starting with a
-         * binary value. The first line of http must always start with a
-         * alpha character, therefore its checked this way.
-         */
-        if ((0 < pos) &&
-            (isAlpha(Ethernet::buffer[pos])))
+        if (true == client)
         {
-            EthernetClient  client(&Ethernet::buffer[pos], ether.getTcpPayloadLength());
-            HttpRequest     httpRequest(client);
-
-#if defined(DEBUG)
-            Serial.printf("---> %u (%u)\n", pos, ether.getTcpPayloadLength());
-            for(uint16_t ii = 0; ii < ether.getTcpPayloadLength(); ++ii)
-            {
-                Serial.print(static_cast<char>(Ethernet::buffer[pos + ii]));
-            }
-            Serial.print("---\n");
-#endif  /* defined(DEBUG) */
+            HttpRequest httpRequest(client);
 
             /* Parse the request */
             if (true == httpRequest.readRequest())
@@ -545,12 +565,6 @@ static void handleNetwork(void)
 
                 httpReply.send("Bad Request");
             }
-
-            /* Send TCP message now.
-             * Note, all previously calls to to httpReply will only push it to the internal
-             * client buffer.
-             */
-            client.send();
         }
     }
 }
