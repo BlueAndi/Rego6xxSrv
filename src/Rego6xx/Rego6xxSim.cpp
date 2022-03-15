@@ -137,20 +137,33 @@ void Rego6xxSim::generateConfirmRsp()
 void Rego6xxSim::generateTextRsp(const String& text)
 {
     const uint8_t   MAX_LEN = 20;
-    uint8_t         idx     = 0;
+    uint8_t         textIdx = 0;
+    uint8_t         rspIdx  = 0;
 
     m_rspSize = 42;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
+    m_rspBuffer[rspIdx] = Rego6xxCtrl::DEV_ADDR_HOST;
+    ++rspIdx;
 
-    while((MAX_LEN > idx) && (text.length() > idx))
+    while((MAX_LEN > textIdx) && (text.length() > textIdx))
     {
-        m_rspBuffer[idx + 1] = (static_cast<uint8_t>(text[idx]) & 0xf0) >> 4;
-        m_rspBuffer[idx + 2] = (static_cast<uint8_t>(text[idx]) & 0x0f) >> 0;
-        idx += 2;
+        m_rspBuffer[rspIdx] = (static_cast<uint8_t>(text[textIdx]) & 0xf0) >> 4;
+        ++rspIdx;
+
+        m_rspBuffer[rspIdx] = (static_cast<uint8_t>(text[textIdx]) & 0x0f) >> 0;
+        ++rspIdx;
+
+        ++textIdx;
     }
 
-    m_rspBuffer[4] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+    /* Fill up with zeros. */
+    while((m_rspSize - 1) > rspIdx)
+    {
+        m_rspBuffer[rspIdx] = 0;
+        ++rspIdx;
+    }
+
+    m_rspBuffer[m_rspSize - 1] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
 }
 
 void Rego6xxSim::generateErrprRsp()
@@ -163,32 +176,40 @@ void Rego6xxSim::generateErrprRsp()
         0x03, 0x01, 0x03, 0x0A, 0x03, 0x00, 0x03, 0x03,
         0x00, 0x00, 0x00, 0x01, 0x04, 0x06, 0x00, 0x02
     };
-    uint8_t         idx     = 0;
+    uint8_t         dataIdx = 0;
+    uint8_t         rspIdx  = 0;
 
     m_rspSize = 42;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
+    m_rspBuffer[rspIdx] = Rego6xxCtrl::DEV_ADDR_HOST;
+    ++rspIdx;
 
-    while((sizeof(data) / sizeof(data[1])) > idx)
+    while((sizeof(data) / sizeof(data[1])) > dataIdx)
     {
-        m_rspBuffer[idx + 1] = data[idx];
-        ++idx;
+        m_rspBuffer[rspIdx] = data[dataIdx];
+        ++dataIdx;
+        ++rspIdx;
     }
 
-    m_rspBuffer[41] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+    m_rspBuffer[m_rspSize - 1] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
 }
 
 void Rego6xxSim::generateBoolRsp(bool value)
 {
-    uint16_t u16Value = (false == value) ? 0 : 1;
+    uint16_t    u16Value    = (false == value) ? 0 : 1;
+    uint8_t     rspIdx      = 0;
 
     m_rspSize = 5;
 
-    m_rspBuffer[0] = Rego6xxCtrl::DEV_ADDR_HOST;
-    m_rspBuffer[1] = (u16Value >> 14) & 0x03;
-    m_rspBuffer[2] = (u16Value >>  7) & 0x7f;
-    m_rspBuffer[3] = (u16Value >>  0) & 0x7f;
-    m_rspBuffer[4] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
+    m_rspBuffer[rspIdx] = Rego6xxCtrl::DEV_ADDR_HOST;
+    ++rspIdx;
+    m_rspBuffer[rspIdx] = (u16Value >> 14) & 0x03;
+    ++rspIdx;
+    m_rspBuffer[rspIdx] = (u16Value >>  7) & 0x7f;
+    ++rspIdx;
+    m_rspBuffer[rspIdx] = (u16Value >>  0) & 0x7f;
+
+    m_rspBuffer[m_rspSize - 1] = Rego6xxUtil::calculateChecksum(&m_rspBuffer[1], m_rspSize - 2);
 }
 
 void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
@@ -216,7 +237,22 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
 
         case Rego6xxCtrl::CMD_ID_WRITE_FRONT_PANEL:
-            generateConfirmRsp(); /* Not supported yet. */
+            {
+                uint16_t    addr;
+                uint16_t    value;
+
+                addr  = ((uint16_t)(buffer[2] & 0x03)) << 14;
+                addr |= ((uint16_t)(buffer[3] & 0x7f)) <<  7;
+                addr |= ((uint16_t)(buffer[4] & 0x7f)) <<  0;
+
+                value  = ((uint16_t)(buffer[5] & 0x03)) << 14;
+                value |= ((uint16_t)(buffer[6] & 0x7f)) <<  7;
+                value |= ((uint16_t)(buffer[7] & 0x7f)) <<  0;
+
+                Serial.printf("Write 0x%04X to front panel 0x%04X.\n", value, addr);
+
+                generateConfirmRsp();
+            }
             break;
 
         case Rego6xxCtrl::CMD_ID_READ_SYSTEM_REG:
@@ -269,7 +305,7 @@ void Rego6xxSim::prepareRsp(const uint8_t* buffer, size_t size)
             break;
 
         case Rego6xxCtrl::CMD_ID_READ_DISPLAY:
-            generateTextRsp(""); /* Not supported yet. */
+            generateTextRsp("abc");
             break;
 
         case Rego6xxCtrl::CMD_ID_READ_LAST_ERROR:

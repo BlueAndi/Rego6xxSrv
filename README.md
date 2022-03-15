@@ -19,11 +19,13 @@ It runs on the AVR-NET-IO board from Pollin.
     - [Update via serial interface](#update-via-serial-interface)
   - [Used Libraries](#used-libraries)
 - [REST API](#rest-api)
-  - [Get temperature value (GET /api/sensors/<sensor>)](#get-temperature-value-get-apisensorssensor)
+  - [Get temperature sensor value (GET /api/sensors/&lt;sensor&gt;)](#get-temperature-sensor-value-get-apisensorssensor)
   - [Set temperature value (POST /api/sensors)](#set-temperature-value-post-apisensors)
   - [Send raw command (POST /api/debug)](#send-raw-command-post-apidebug)
   - [Get last error information (GET /api/lastError)](#get-last-error-information-get-apilasterror)
-  - [Get frontpanel LED state (GET /api/frontPanel/<led>)](#get-frontpanel-led-state-get-apifrontpanelled)
+  - [Get frontpanel LED state (GET /api/frontPanel/&lt;led&gt;)](#get-frontpanel-led-state-get-apifrontpanelled)
+  - [Get display content (GET /api/display/&lt;row&gt;)](#get-display-content-get-apidisplayrow)
+  - [Manipulate frontpanel keyboard and wheel (POST /api/frontPanel/&lt;hmiDevice&gt;)](#manipulate-frontpanel-keyboard-and-wheel-post-apifrontpanelhmidevice)
 - [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
 - [License](#license)
 - [Contribution](#contribution)
@@ -81,8 +83,8 @@ After the bootloader is installed and running, the typical Arduino upload can be
 
 # REST API
 
-## Get temperature value (GET /api/sensors/<sensor>)
-Get a temperature value in °C from the heatpump.
+## Get temperature sensor value (GET /api/sensors/&lt;sensor&gt;)
+Get a temperature sensor value in °C from the heatpump.
 
 ```<sensor>```:
 * gt1 - Radiator return temperature in °C
@@ -124,7 +126,7 @@ JSON parameter:
 
 Example:
 ```bash
-$ curl -H "Content-Type: application/json" --data '{"name": "gt3Target", "value": 20.4}' http://192.168.1.3/api/sensors
+$ curl -X POST -H "Content-Type: application/json" --data '{"name": "gt3Target", "value": 20.4}' http://192.168.1.3/api/sensors
 ```
 
 Response:
@@ -144,7 +146,7 @@ JSON parameter:
 
 Example:
 ```bash
-$ curl -H "Content-Type: application/json" --data '{"cmdId": 2, "addr": 521, "value": 0 }' http://192.168.1.3/api/debug
+$ curl -X POST -H "Content-Type: application/json" --data '{"cmdId": 2, "addr": 521, "value": 0 }' http://192.168.1.3/api/debug
 ```
 
 Response:
@@ -172,7 +174,7 @@ Response:
 }
 ```
 
-## Get frontpanel LED state (GET /api/frontPanel/<led>)
+## Get frontpanel LED state (GET /api/frontPanel/&lt;led&gt;)
 Get state of frontpanel LED from the heatpump.
 
 ```<led>```:
@@ -194,6 +196,51 @@ Response:
 ```
 
 Status 0 means successful. If the request fails, it the status will be non-zero and data is empty.
+
+## Get display content (GET /api/display/&lt;row&gt;)
+Get display row content.
+
+```<row>```:
+* Row id from 1 to 4.
+
+Response:
+```json
+{
+  "data": {
+    "row": 1,
+    "display": "..."
+  },
+  "status":0
+}
+```
+
+Status 0 means successful. If the request fails, it the status will be non-zero and data is empty.
+
+## Manipulate frontpanel keyboard and wheel (POST /api/frontPanel/&lt;hmiDevice&gt;)
+Manipulate keyboard and wheel of the frontpanel like the user is in front of the heatpump.
+
+```<hmiDevice>```:
+* buttonL - Left button
+* buttonM - Middle button
+* buttonR - Right button
+* wheelTL - Turn wheel left
+* wheelTR - Turn wheel right
+
+Example:
+```bash
+$ curl -X POST http://192.168.1.3/api/frontPanel/wheelTR
+```
+
+Response:
+```json
+{
+  "data": {
+    "row": 1,
+    "display": "..."
+  },
+  "status":0
+}
+```
 
 # Issues, Ideas And Bugs
 If you have further ideas or you found some bugs, great! Create a [issue](https://github.com/BlueAndi/Rego6xxSrv/issues) or if you are able and willing to fix it by yourself, clone the repository and create a pull request.

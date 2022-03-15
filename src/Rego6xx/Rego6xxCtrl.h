@@ -46,6 +46,7 @@
 #include "Rego6xxConfirmRsp.h"
 #include "Rego6xxErrorRsp.h"
 #include "Rego6xxBoolRsp.h"
+#include "Rego6xxDisplayRsp.h"
 
 /******************************************************************************
  * Macros
@@ -144,11 +145,27 @@ public:
      */
     enum FrontPanelAddr
     {
-        FRONTPANEL_ADDR_POWER   = 0x0012,   /**< Power LED */
-        FRONTPANEL_ADDR_PUMP    = 0x0013,   /**< Pump LED */
-        FRONTPANEL_ADDR_HEATING = 0x0014,   /**< Heating LED */
-        FRONTPANEL_ADDR_BOILER  = 0x0015,   /**< Boiler LED */
-        FRONTPANEL_ADDR_ALARM   = 0x0016,   /**< Alarm LED */
+        FRONTPANEL_ADDR_POWER_BUTTON    = 0x0008,   /**< Power button */
+        FRONTPANEL_ADDR_LEFT_BUTTON     = 0x0009,   /**< Left button */
+        FRONTPANEL_ADDR_MIDDLE_BUTTON   = 0x000A,   /**< Middle button */
+        FRONTPANEL_ADDR_RIGHT_BUTTON    = 0x000B,   /**< Right button */
+        FRONTPANEL_ADDR_POWER_LED       = 0x0012,   /**< Power LED */
+        FRONTPANEL_ADDR_PUMP_LED        = 0x0013,   /**< Pump LED */
+        FRONTPANEL_ADDR_HEATING_LED     = 0x0014,   /**< Heating LED */
+        FRONTPANEL_ADDR_BOILER_LED      = 0x0015,   /**< Boiler LED */
+        FRONTPANEL_ADDR_ALARM_LED       = 0x0016,   /**< Alarm LED */
+        FRONTPANEL_ADDR_WHEEL           = 0x0044    /**< Wheel */
+    };
+
+    /**
+     * Display row identifiers of Rego600
+     */
+    enum Row
+    {
+        DISPLAY_ROW_1 = 0x00,   /**< Row 1 */
+        DISPLAY_ROW_2 = 0x01,   /**< Row 2 */
+        DISPLAY_ROW_3 = 0x02,   /**< Row 3 */
+        DISPLAY_ROW_4 = 0x03    /**< Row 4 */
     };
 
     /**
@@ -162,7 +179,8 @@ public:
         m_stdRsp(stream),
         m_confirmRsp(stream),
         m_errorRsp(stream),
-        m_boolRsp(stream)
+        m_boolRsp(stream),
+        m_displayRsp(stream)
     {
     }
 
@@ -209,13 +227,32 @@ public:
     const Rego6xxStdRsp* readRegoVersion();
 
     /**
-     * Read from front panel
+     * Read from front panel.
      * 
      * @param[in] frontPanelAddr    Front panel address
      * 
      * @return Asynchronous response
      */
     const Rego6xxBoolRsp* readFrontPanel(FrontPanelAddr addr);
+
+    /**
+     * Write to front panel.
+     * 
+     * @param[in] frontPanelAddr    Front panel address
+     * @param[in] value             Value to write
+     * 
+     * @return Asynchronous response
+     */
+    const Rego6xxConfirmRsp* writeFrontPanel(FrontPanelAddr addr, uint16_t value);
+
+    /**
+     * Read from display.
+     * 
+     * @param[in] row   Display row
+     * 
+     * @return Asynchronous response
+     */
+    const Rego6xxDisplayRsp* readDisplay(Row row);
 
     /**
      * Write a value to the given address.
@@ -288,6 +325,7 @@ private:
     Rego6xxConfirmRsp   m_confirmRsp;   /**< Confirmation response */
     Rego6xxErrorRsp     m_errorRsp;     /**< Error log response */
     Rego6xxBoolRsp      m_boolRsp;      /**< Boolean response */
+    Rego6xxDisplayRsp   m_displayRsp;   /**< Display response */
 
     Rego6xxCtrl();
 
