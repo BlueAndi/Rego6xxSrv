@@ -191,7 +191,7 @@ Response:
     "name": "power",
     "state": true
   },
-  "status":0
+  "status": 0
 }
 ```
 
@@ -210,7 +210,7 @@ Response:
     "row": 1,
     "display": "..."
   },
-  "status":0
+  "status": 0
 }
 ```
 
@@ -235,10 +235,9 @@ Response:
 ```json
 {
   "data": {
-    "row": 1,
-    "display": "..."
+    "name": "wheelTR"
   },
-  "status":0
+  "status": 0
 }
 ```
 
