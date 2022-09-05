@@ -82,7 +82,7 @@ typedef enum
     TEMPERATURE_ID_GT8,         /**< Heat fluid out GT8 */
     TEMPERATURE_ID_GT9,         /**< Heat fluid in GT9 */
     TEMPERATURE_ID_GT10,        /**< Cold fluid in GT10 */
-    TEMPERATURE_ID_GT11,        /**< Cold fulid out GT11 */
+    TEMPERATURE_ID_GT11,        /**< Cold fluid out GT11 */
     TEMPERATURE_ID_GT3X,        /**< External hot water GT3X */
 
     TEMPERATURE_ID_GT3_TARGET,  /**< GT3 target value */
