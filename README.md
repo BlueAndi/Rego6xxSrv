@@ -3,33 +3,33 @@ A REST API server which provides control over IVT heatpumps, which uses a Rego6x
 It runs on the AVR-NET-IO board from Pollin.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://choosealicense.com/licenses/mit/)
-[![Repo Status](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Repo Status](https://www.repostatus.org/badges/latest/inactive.svg)](https://www.repostatus.org/#inactive)
 [![Release](https://img.shields.io/github/release/BlueAndi/Rego6xxSrv.svg)](https://github.com/BlueAndi/Rego6xxSrv/releases)
 [![PlatformIO CI](https://github.com/BlueAndi/Rego6xxSrv/workflows/PlatformIO%20CI/badge.svg?branch=master)](https://github.com/BlueAndi/Rego6xxSrv/actions?query=workflow%3A%22PlatformIO+CI%22)
 
-- [Rego6xx Server](#rego6xx-server)
-- [Motivation](#motivation)
-- [Electronic](#electronic)
-- [Software](#software)
-  - [IDE](#ide)
-  - [Installation](#installation)
-  - [Install bootloader](#install-bootloader)
-  - [Change MAC address of network interface controller](#change-mac-address-of-network-interface-controller)
-  - [Build Project](#build-project)
-  - [Update of the device](#update-of-the-device)
-    - [Update via serial interface](#update-via-serial-interface)
-  - [Used Libraries](#used-libraries)
-- [REST API](#rest-api)
-  - [Get temperature sensor value (GET /api/sensors/&lt;sensor&gt;)](#get-temperature-sensor-value-get-apisensorssensor)
-  - [Set temperature value (POST /api/sensors)](#set-temperature-value-post-apisensors)
-  - [Send raw command (POST /api/debug)](#send-raw-command-post-apidebug)
-  - [Get last error information (GET /api/lastError)](#get-last-error-information-get-apilasterror)
-  - [Get frontpanel LED state (GET /api/frontPanel/&lt;led&gt;)](#get-frontpanel-led-state-get-apifrontpanelled)
-  - [Get display content (GET /api/display/&lt;row&gt;)](#get-display-content-get-apidisplayrow)
-  - [Manipulate frontpanel keyboard and wheel (POST /api/frontPanel/&lt;hmiDevice&gt;)](#manipulate-frontpanel-keyboard-and-wheel-post-apifrontpanelhmidevice)
-- [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
-- [License](#license)
-- [Contribution](#contribution)
+* [Rego6xx Server](#rego6xx-server)
+* [Motivation](#motivation)
+* [Electronic](#electronic)
+* [Software](#software)
+  * [IDE](#ide)
+  * [Installation](#installation)
+  * [Install bootloader](#install-bootloader)
+  * [Change MAC address of network interface controller](#change-mac-address-of-network-interface-controller)
+  * [Build Project](#build-project)
+  * [Update of the device](#update-of-the-device)
+    * [Update via serial interface](#update-via-serial-interface)
+  * [Used Libraries](#used-libraries)
+* [REST API](#rest-api)
+  * [Get temperature sensor value (GET /api/sensors/\<sensor\>)](#get-temperature-sensor-value-get-apisensorssensor)
+  * [Set temperature value (POST /api/sensors)](#set-temperature-value-post-apisensors)
+  * [Send raw command (POST /api/debug)](#send-raw-command-post-apidebug)
+  * [Get last error information (GET /api/lastError)](#get-last-error-information-get-apilasterror)
+  * [Get frontpanel LED state (GET /api/frontPanel/\<led\>)](#get-frontpanel-led-state-get-apifrontpanelled)
+  * [Get display content (GET /api/display/\<row\>)](#get-display-content-get-apidisplayrow)
+  * [Manipulate frontpanel keyboard and wheel (POST /api/frontPanel/\<hmiDevice\>)](#manipulate-frontpanel-keyboard-and-wheel-post-apifrontpanelhmidevice)
+* [Issues, Ideas And Bugs](#issues-ideas-and-bugs)
+* [License](#license)
+* [Contribution](#contribution)
 
 # Motivation
 I have a photovoltaic system (PV) on the roof of the house. If the PV provides enough energy, the idea is to store it in form of hot water with the heatpump.
@@ -44,6 +44,10 @@ The protocol for the Rego6xx controller was derived from http://rago600.sourcefo
 * [Pollin AVR-NET-IO](https://www.pollin.de/p/avr-net-io-fertigmodul-810073)
 
 Note, the AVR-NET-IO has original a ATmega32-16PU, which was replaced with a ATmega644p.
+
+> [!WARNING]  
+> 2024-01-01: The Pollin AVR-NET-IO development is obsolete and not available anymore.\
+> There is no known successor development board.
 
 # Software
 
